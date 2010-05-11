@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$in .= $val . ",";
 	endforeach;
 
+//PREPARE SQL
 	$sql = "SELECT p.ID, u.user_nicename, p.post_title, p.post_content, p.guid ";
 	$sql .= "FROM " . $wpdb->prefix . "posts as p, ". $wpdb->prefix ."users as u ";
 	$sql .= "WHERE p.ID in (". rtrim($in, ",") . ") AND p.post_type = 'post' AND p.post_status = 'publish' AND u.ID = p.post_author ";

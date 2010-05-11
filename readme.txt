@@ -14,24 +14,24 @@ bla
 
 == Installation ==
 
-bla
+Copy "export-posts" folder to your WordPress Plugins Directory. Activate plugin via WordPress settings.
 
 == Other Notes ==
 
-bla
+None.
 
 == Screenshots ==
 
-bla
+None.
 
 == Changelog ==
 
-bla
+None. Version 1
 
 == Frequently Asked Questions ==
 
-bla
+None.
 
 == Upgrade Notice ==
 
-bla
+None.
