@@ -10,7 +10,7 @@ Plugin for WordPress that exports text files for print publication.
 
 == Description ==
 
-bla
+Used to select posts from a Wordpress site, and export them as text files.
 
 == Installation ==
 
