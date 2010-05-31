@@ -25,11 +25,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	    # create zip file
         $f = 'stories-'.time().'.zip';
         $upload_dir = wp_upload_dir();
-        print_r($upload_dir);
         $dir = $upload_dir['path'];
 	    $filename = $dir.'/'.$f;
 	    #print 'filename:' . $filename;
+	    if ($upload_dir['error']) { 
+	        print '<p>' . $upload_dir['error'] . '</p>';
+	        exit(0);
+	    }
         if (! is_dir($dir)) {
+            
             print '<p>Upload directory: ' . $dir .'<br/>';
             print 'ERROR: Directory does not exist.<br/></p>';
             exit(0);
@@ -63,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div id="content" class="narrowcolumn">
 
             	<p>
-                You can download your zip file <a href="<?= $url ?>">here</a>.
+                You can download your zip file <a href="<?php echo $url; ?>">here</a>.
             	</p>
 
             </div>
@@ -77,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	
 } else {
 
-$sql = "SELECT p.ID, u.user_nicename, p.post_title, SUM(LENGTH(p.post_content) - LENGTH(REPLACE(p.post_content, ' ', ''))+1) wordcount, p.guid ";
+$sql = "SELECT p.ID, u.user_nicename, p.post_title, SUM(LENGTH(p.post_content) - LENGTH(REPLACE(p.post_content, ' ', ''))+1) as wordcount, p.guid ";
 $sql .= "FROM " .$wpdb->prefix . "posts as p, ". $wpdb->prefix ."users as u ";
 $sql .= "WHERE u.ID = p.post_author AND p.post_type = 'post' and p.post_status = 'publish' ";
 $sql .= "GROUP BY p.ID ";
@@ -94,7 +98,8 @@ $dumprows = $wpdb->get_results($sql);
 		if ($dumprows) :
 			foreach ($dumprows as $dump) :
 		?>
-			<input type="checkbox" name="post_<?= $dump->ID ?>" value="<?= $dump->ID ?>"/><a href="<?= $dump->guid ?>"><?= $dump->post_title ?></a>  - <?= $dump->user_nicename ?> (<?= $dump->wordcount ?> words)<br/>
+			<input type="checkbox" name="post_<?php echo $dump->ID; ?>" value="<?php echo $dump->ID; ?>"/><a href="<?php echo $dump->guid; ?>">
+			    <?php echo $dump->post_title; ?></a>  - <?php echo $dump->user_nicename; ?> (<?php $dump->wordcount; ?> words)<br/>
 		<?php
 			endforeach;
 		endif;

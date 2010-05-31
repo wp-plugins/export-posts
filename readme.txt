@@ -18,7 +18,7 @@ Copy "export-posts" folder to your WordPress Plugins Directory. Activate plugin 
 
 == Other Notes ==
 
-None.
+Requires PHP zip and iconv modules.
 
 == Screenshots ==
 
