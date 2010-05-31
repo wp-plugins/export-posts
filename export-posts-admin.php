@@ -24,22 +24,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	if ($rows) :
 	    # create zip file
         $f = 'stories-'.time().'.zip';
-        $dir = get_option('upload_path');
+        $upload_dir = wp_upload_dir();
+        print_r($upload_dir);
+        $dir = $upload_dir['path'];
 	    $filename = $dir.'/'.$f;
 	    #print 'filename:' . $filename;
         if (! is_dir($dir)) {
-            print '<p>Upload directory: ' . get_option('upload_path').'<br/>';
+            print '<p>Upload directory: ' . $dir .'<br/>';
             print 'ERROR: Directory does not exist.<br/></p>';
             exit(0);
         }
         if (! is_writable($dir)) {
-            print '<p>Upload directory: ' . get_option('upload_path').'<br/>';
+            print '<p>Upload directory: ' . $dir .'<br/>';
             print 'ERROR: Directory is not writable.<br/></p>';
             exit(0);        
         }
-        $path = str_replace(WP_CONTENT_DIR, '', get_option('upload_path'));
-        $url = WP_CONTENT_URL . $path . '/'. $f;
-        
+        #$path = str_replace(WP_CONTENT_DIR, '', $dir);
+        $url = $upload_dir['url'] . '/'. $f;
 	    $zip = new ZipArchive;
 	    $res = $zip->open($filename, ZipArchive::CREATE) or die('Could not create file.');
 	    if ($res == TRUE) {
