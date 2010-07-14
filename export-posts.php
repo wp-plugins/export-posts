@@ -18,5 +18,11 @@ function dump_admin_actions() {
     add_management_page('Export-Posts', 'Export-Posts', 1, 'Export-Posts', 'dump_menu');
 }
 
+function add_admin_scripts() {
+	wp_enqueue_script("jquery");
+}
+
 add_action('admin_menu', 'dump_admin_actions');
+add_action('admin_enqueue_scripts', 'add_admin_scripts');
+
 ?>
