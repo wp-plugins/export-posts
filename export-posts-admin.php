@@ -2,15 +2,12 @@
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
-    if (isset($_POST["clear"])) {
+    if ($_POST["submit"] == 'Clear Old Zip Files') {
         clear_old_zips();
         print "<p>Old zip files deleted.</p>";
         exit(0);
     }
-	$in = "";
-	foreach ($_POST as $val):
-		$in .= $val . ",";
-	endforeach;
+    $in =  $_POST['selected_values'];
 
 //PREPARE SQL
 	$sql = "SELECT p.ID, u.user_nicename, p.post_title, p.post_content, p.guid ";
@@ -86,38 +83,104 @@ $dumprows = get_post_list();
 <div id="content" class="narrowcolumn">
 	
 	<p>
-		<form method="post" action="">
-		<input type="checkbox" value="all" id="select_all"/> Select All<br/>
-	<?php
-		if ($dumprows) :
-			foreach ($dumprows as $dump) :
-		?>
-			<input type="checkbox" class="story" name="post_<?php echo $dump->ID; ?>" value="<?php echo $dump->ID; ?>"/><a href="<?php echo $dump->guid; ?>">
-			    <?php echo $dump->post_title; ?></a>  - <?php echo $dump->user_nicename; ?> (<?php echo $dump->words; ?> words)<br/>
-		<?php
-			endforeach;
-		endif;
-	?>
-		<p><input type="submit" value="Generate Zip File"/></p>
+		<form id="export_posts" method="post" action="">
+		
+    	<?php
+    		if ($dumprows) :
+    	?>  
+    	    All Posts:<br/>
+            <select id="export_post_entries" multiple="multiple" size="12" style="height: auto; width: 750px;">
+    	    <?php
+    			foreach ($dumprows as $dump) :
+    		?>
+                <option value="<?php echo $dump->ID; ?>" class="export_post_entry">
+                    <?php echo $dump->post_title; ?>
+                    (<?php echo $dump->user_nicename; ?> - <?php echo $dump->words; ?> words)
+                </option>
+    		<?php
+    			endforeach;
+    		echo "</select>";
+    		endif;
+    	?>		
+        <p style="text-align: center; width: 750px;">
+        <input type="button" id="add_selected" value="Add Selected Posts"/>
+        <input type="button" id="remove_selected" value="Remove Selected Posts"/> 
+        <input type="button" id="add_all" value="Add All Posts"/> 
+        <input type="button" id="remove_all" value="Remove All Posts"/> 
+        </p>
+    	<p>
+    	Selected Posts:<br/>
+        <select id="selected" multiple="multiple" size="12" style="height: auto; width: 750px;">
+    	</select>
+		</p>
+
+        <p style="text-align: center; width: 750px;">
+            <input type="hidden" id="selected_values" name="selected_values" value="0"/>
+		    <input type="submit" name="submit" value="Generate Zip File" id="zip"/>
+		</p>
 		</form>
-	</p>
 	
-	<p>
-	<form method="post" action="">
-	<input type="hidden" name="clear" value="1"/>
-	<input type="submit" value="Clear Old Zip Files"/>
-	</form>
-	</p>
 </div>
 <script type="text/javascript">
     jQuery(document).ready(function($) {
-        jQuery("#select_all").change(function() {
-            if ($('#select_all').attr('checked')) {
-                $('.story').attr('checked', true);
-            } else {
-                $('.story').attr('checked', false);
+        
+        jQuery('#export_posts').submit(function() {
+            var ids = '';
+            jQuery("#selected option").each(function(index, elem) {
+                ids += $(elem).val() + ',';
+            });
+            if (ids.length == 0) { 
+                alert("Please select posts to export.");
+                return false; 
             }
+            ids = ids.slice(0, -1);
+            jQuery('#selected_values').val(ids);
         });
+        
+        jQuery("#remove_all").click(function() {
+            jQuery("#selected option").each(function(index, elem) {
+                var selectElem = $(elem);
+                if (selectElem.val()) {
+                    jQuery('#selected option[value=' + selectElem.val() + ']').remove();
+                    jQuery('#export_post_entries').append('<option value="'+selectElem.val()+'">' + 
+                    selectElem.text() + '</option>');
+                }
+            });
+        });
+
+        jQuery("#remove_selected").click(function() {
+            jQuery("#selected :selected").each(function(index, elem) {
+                var selectElem = $(elem);
+                if (selectElem.val()) {
+                    jQuery('#selected option[value=' + selectElem.val() + ']').remove();
+                    jQuery('#export_post_entries').append('<option value="'+selectElem.val()+'">' + 
+                    selectElem.text() + '</option>');
+                }
+            });
+        });
+
+        jQuery("#add_selected").click(function() {
+            jQuery("#export_post_entries :selected").each(function(index, elem) {
+                var selectElem = $(elem);
+                if (selectElem.val()) {
+                    jQuery('#export_post_entries option[value=' + selectElem.val() + ']').remove();
+                    jQuery('#selected').append('<option value="'+selectElem.val()+'">' + 
+                    selectElem.text() + '</option>');
+                }
+            });
+        });
+
+        jQuery("#add_all").click(function() {
+            jQuery("#export_post_entries option").each(function(index, elem) {
+                var selectElem = $(elem);
+                if (selectElem.val()) {
+                    jQuery('#export_post_entries option[value=' + selectElem.val() + ']').remove();
+                    jQuery('#selected').append('<option value="'+selectElem.val()+'">' + 
+                    selectElem.text() + '</option>');
+                }
+            });
+        });
+
     });
 </script>
 <?php 
