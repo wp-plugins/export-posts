@@ -9,8 +9,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     $in =  $_POST['selected_values'];
 
+    /*echo "<pre>";
+    print_r($_POST);
+    print '<br/>';
+    print 'c: ' . $content . '<br/>';
+    if ($content) { print 'yes'; }
+    print $_POST['html_formatting'];
+    echo "</pre>";*/
 //PREPARE SQL
-	$sql = "SELECT p.ID, u.user_nicename, p.post_title, p.post_content, p.guid ";
+	$sql = "SELECT p.ID, u.user_nicename, p.post_title, p.post_content, p.post_date, p.guid ";
 	$sql .= "FROM " . $wpdb->prefix . "posts as p, ". $wpdb->prefix ."users as u ";
 	$sql .= "WHERE p.ID in (". rtrim($in, ",") . ") AND p.post_type = 'post' AND p.post_status = 'publish' AND u.ID = p.post_author ";
 	$sql .= "GROUP BY p.ID ";
@@ -23,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $upload_dir = wp_upload_dir();
         $dir = $upload_dir['path'];
 	    $filename = $dir.'/'.$f;
-	    #print 'filename:' . $filename;
+
 	    if ($upload_dir['error']) { 
 	        print '<p>' . $upload_dir['error'] . '</p>';
 	        exit(0);
@@ -39,17 +46,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             print 'ERROR: Directory is not writable.<br/></p>';
             exit(0);        
         }
-        #$path = str_replace(WP_CONTENT_DIR, '', $dir);
+
         $url = $upload_dir['url'] . '/'. $f;
 	    $zip = new ZipArchive;
 	    $res = $zip->open($filename, ZipArchive::CREATE) or die('Could not create file.');
 	    if ($res == TRUE) {
 	        $zip->addEmptyDir('stories');
     		foreach ($rows as $row) {
-    		    $story = $row->post_title . "\n";
-    		    $story .= $row->user_nicename . "\n\n";
-    		    $story .= $row->post_content;
-                $story = strip_tags($story);
+                $story = '';
+                if ($_POST['title']) {
+    		        $story = $row->post_title . "\n";
+    		    }
+    		    if ($_POST['author']) {
+    		        $story .= $row->user_nicename . "\n";
+    		    }
+    		    if ($_POST['date']) {
+    		        $story .= $row->post_date . "\n";
+    		    }
+    		    if ($_POST['content']) {
+    		        $story .= "\n" . $row->post_content;
+    		    }
+    		    
+    		    if (!($_POST['html_formatting'])) {
+                    $story = strip_tags($story);
+                }
+
                 $story = iconv("UTF-8", "ascii//IGNORE", $story);
                 $story = preg_replace("/&amp;/", "&", $story);
 
@@ -114,6 +135,19 @@ $dumprows = get_post_list();
     	</select>
 		</p>
 
+        <p>
+            <b>Format</b><br/>
+            <input type="checkbox" name="html_formatting" value="1"/> Keep HTML Formatting
+        </p>
+
+        <p>
+            <b>Fields to include:</b><br/>
+            <input type="checkbox" name="title" value="1" checked="checked"/> Title
+            <input type="checkbox" name="author" value="1"/> Author
+            <input type="checkbox" name="date" value="1"/> Date
+            <input type="checkbox" name="content" value="1" checked="checked"/> Content
+        </p>
+        
         <p style="text-align: center; width: 750px;">
             <input type="hidden" id="selected_values" name="selected_values" value="0"/>
 		    <input type="submit" name="submit" value="Generate Zip File" id="zip"/>
