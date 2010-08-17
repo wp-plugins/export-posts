@@ -3,7 +3,7 @@ Contributors: jboydston, dkukral
 Donate link: http://joeboydston.com/export-posts
 Tags: export, text, xml, quark, indesign
 Requires at least: 2.9.1
-Tested up to: 2.9.1
+Tested up to: 3.0.1
 Stable tag: 1.0.1
 
 Plugin for WordPress that exports text files for print publication.
@@ -26,11 +26,20 @@ None.
 
 == Changelog ==
 
-None. Version 1
+= 1.0.1 =
+* Code cleanup
+* New post selection interface
+* Export formats
+
+= 1.0 = 
+* Initial version
 
 == Frequently Asked Questions ==
 
-None.
+= Why am I getting errors about wp-content/uploads directory? =
+
+Make sure the uploads directory exists in your wp-content directory and the user the web server runs as has write permissions.
+
 
 == Upgrade Notice ==
 
