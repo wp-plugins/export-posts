@@ -54,28 +54,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	        $zip->addEmptyDir('stories');
     		foreach ($rows as $row) {
                 $story = '';
+                $xml = "<export-posts>\n";
+                $xml .= "\t<post>\n";
                 if ($_POST['title']) {
     		        $story = $row->post_title . "\n";
+    		        $xml .= "\t\t<title>". $row->post_title . "</title>\n";
     		    }
     		    if ($_POST['author']) {
     		        $story .= $row->user_nicename . "\n";
+    		        $xml .= "\t\t<author>". $row->user_nicename . "</author>\n";
     		    }
     		    if ($_POST['date']) {
     		        $story .= $row->post_date . "\n";
+    		        $xml .= "\t\t<date>". $row->post_date . "</date>\n";
     		    }
     		    if ($_POST['content']) {
     		        $story .= "\n" . $row->post_content;
+    		        $xml .= "\t\t<content>". strip_tags($row->post_content) . "\t\t</content>\n";
     		    }
     		    
-    		    if (!($_POST['html_formatting'])) {
+    		    $xml .= "\t</post>\n</export-posts>\n";
+    		    $extension = ".txt";
+    		    if ($_POST['output'] != 'html') {
                     $story = strip_tags($story);
                 }
+                
+                if ($_POST['output'] == 'html') { $extension = ".html"; }
+                if ($_POST['output'] == 'xml') { $extension = ".xml"; }
 
                 $story = iconv("UTF-8", "ascii//IGNORE", $story);
                 $story = preg_replace("/&amp;/", "&", $story);
 
-    		    $zip_name = "stories/" . $row->post_title . ".txt";
-    		    $zip->addFromString($zip_name, $story);
+    		    $zip_name = "stories/" . $row->post_title . $extension;
+    		    if ($_POST['output'] == 'xml') {
+    		        $zip->addFromString($zip_name, $xml);
+    		    } else {
+    		        $zip->addFromString($zip_name, $story);
+    		    }
     		}
     		$zip->close();  
 
@@ -136,8 +151,10 @@ $dumprows = get_post_list();
 		</p>
 
         <p>
-            <b>Format</b><br/>
-            <input type="checkbox" name="html_formatting" value="1"/> Keep HTML Formatting
+            <b>Output Format</b><br/>
+            <input type="radio" name="output" value="text" checked="true"/> Text<br/>
+            <input type="radio" name="output" value="xml"/> XML<br/>
+            <input type="radio" name="output" value="html"/> HTML
         </p>
 
         <p>
