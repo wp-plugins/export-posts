@@ -112,19 +112,55 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	endif;
 	
 } else {
-
-$dumprows = get_post_list();
+$dumprows = get_post_list($_GET['category'], $_GET['status']);
 ?>
 
 <div id="content" class="narrowcolumn">
 	
 	<p>
-		<form id="export_posts" method="post" action="">
-		
-    	<?php
-    		if ($dumprows) :
-    	?>  
-    	    All Posts:<br/>
+    	    <p >
+            <form name="filter" action="" method="GET" style="text-align: center; width: 750px;">
+            <input type="hidden" name="page" value="Export-Posts"/>
+    	    <?php $categories = get_categories(); ?>
+    	    Category: <select name="category">
+    	    <option value="all">All Categories</option>
+ 	       <?php
+    	        foreach ($categories as $category) :
+    	    ?>
+    	    <option value="<?php echo $category->slug; ?>" <?php if ($_GET['category'] == $category->slug) { echo " selected"; }?>>
+    	    <?php echo $category->cat_name; ?>
+    	    </option>
+    	    <?php 
+    	        endforeach;
+    	    ?>
+    	 	    </select>
+    	 	Status: <select name="status">
+    	 	<option value="all">All Statuses</option>
+    	 	<?php
+    	 	    $status = get_status_list();
+    	 	    foreach ($status as $stat):
+    	    ?>
+                <option<?php if ($_GET['status'] == $stat->post_status) { echo " selected"; }?>><?php echo $stat->post_status;?></option>
+    	    <?php
+    	        endforeach;
+    	    ?>
+    	    </select>
+    	    <input type="submit" name="submit" value="Filter"/>
+            </form>
+            </p>
+         	<?php
+        		if ($dumprows) :
+        	?>
+        	    <?php
+        	    if ((($_GET['category']) && ($_GET['category'] != 'all')) ||
+        	        (($_GET['status']) && ($_GET['status'] != 'all'))) {
+        	            echo 'Filtered Posts:<br/>';
+        	    } else {
+        	            echo 'All Posts:<br/>';
+        	    }
+        	    ?>
+        	<p></p>
+    		<form id="export_posts" method="post" action="">
             <select id="export_post_entries" multiple="multiple" size="12" style="height: auto; width: 750px;">
     	    <?php
     			foreach ($dumprows as $dump) :
@@ -136,7 +172,7 @@ $dumprows = get_post_list();
     		<?php
     			endforeach;
     		echo "</select>";
-    		endif;
+
     	?>		
         <p style="text-align: center; width: 750px;">
         <input type="button" id="add_selected" value="Add Selected Posts"/>
@@ -170,7 +206,15 @@ $dumprows = get_post_list();
 		    <input type="submit" name="submit" value="Generate Zip File" id="zip"/>
 		</p>
 		</form>
-	
+	    <?php
+	    else:
+	    ?>
+	    <p style="text-align: center; width: 750px;">
+	    No posts match the selected filter.
+	    </p>
+	    <?php
+		endif;
+	    ?>
 </div>
 <script type="text/javascript">
     jQuery(document).ready(function($) {
@@ -243,19 +287,45 @@ function clear_old_zips() {
     $t = exec("rm $files", $r);
 }
 
-function get_post_list() {
+function get_status_list() {
+    global $wpdb;
+    $sql = "SELECT DISTINCT p.post_status FROM ".$wpdb->posts." p WHERE p.post_type='post'";
+    $rows = $wpdb->get_results($sql);
+    return $rows;
+}
+
+function get_post_list($category, $status) {
     global $wpdb;
     
+    if (($category) && ($category != 'all')) {
+
+        $cat_sql = "SELECT term_id FROM " . $wpdb->terms . " ";
+        $cat_sql .= "WHERE slug = '" . $category . "'";
+        $cat_row = $wpdb->get_row($cat_sql);
+
+    }
     $sql =  "SELECT p.ID, u.user_nicename, p.post_title, ";
     $sql .= "SUM(LENGTH(p.post_content) - LENGTH(REPLACE(p.post_content, ' ', ''))+1) as words ";
     $sql .= "FROM " . $wpdb->posts . " p, " . $wpdb->users . " u ";
     $sql .= "WHERE p.post_author = u.ID and ";
     $sql .= "p.post_type='post' and ";
-    $sql .= "p.post_status='publish'";
+    if (($category) && ($category != 'all')) {
+        $catsql = "SELECT r.object_id ";
+        $catsql .= "FROM ". $wpdb->terms . " t, " . $wpdb->term_taxonomy . " x, ";
+        $catsql .= $wpdb->term_relationships . " r ";
+        $catsql .= "WHERE t.slug = '". $category ."' and t.term_id = x.term_id ";
+        $catsql .= "and x.term_taxonomy_id = r.term_taxonomy_id";
+        $sql .= "p.ID in (" . $catsql . ") and ";
+    }
+    if (($status) && ($status != 'all')) {
+        $sql .= "p.post_status='" .$status."' ";
+    } else {
+        $sql .= "p.post_status='publish' ";
+    }
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
-    
+
     $rows = $wpdb->get_results($sql);
-    
+
     return $rows;
 }
 
