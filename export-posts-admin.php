@@ -1,3 +1,4 @@
+    
 <?php
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -9,14 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     $in =  $_POST['selected_values'];
 
-    /*echo "<pre>";
-    print_r($_POST);
-    print '<br/>';
-    print 'c: ' . $content . '<br/>';
-    if ($content) { print 'yes'; }
-    print $_POST['html_formatting'];
-    echo "</pre>";*/
-//PREPARE SQL
 	$sql = "SELECT p.ID, u.user_nicename, p.post_title, p.post_content, p.post_date, p.guid ";
 	$sql .= "FROM " . $wpdb->prefix . "posts as p, ". $wpdb->prefix ."users as u ";
 	$sql .= "WHERE p.ID in (". rtrim($in, ",") . ") AND p.post_type = 'post' AND p.post_status = 'publish' AND u.ID = p.post_author ";
@@ -52,7 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	    $res = $zip->open($filename, ZipArchive::CREATE) or die('Could not create file.');
 	    if ($res == TRUE) {
 	        $zip->addEmptyDir('stories');
+            $exported_status = get_option('export_posts_status');
     		foreach ($rows as $row) {
+    		    # update the status to printed
+    		    $sql = "UPDATE " . $wpdb->posts . " p SET p.post_status = '" . $exported_status . "' WHERE p.ID = " . $row->ID;
+                $wpdb->query($sql);
                 $story = '';
                 $xml = "<export-posts>\n";
                 $xml .= "\t<post>\n";
@@ -112,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	endif;
 	
 } else {
-$dumprows = get_post_list($_GET['category'], $_GET['status']);
+$dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword']);
 ?>
 
 <div id="content" class="narrowcolumn">
@@ -145,6 +142,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status']);
     	        endforeach;
     	    ?>
     	    </select>
+    	    Keyword: <input type="text" name="keyword" value="<?php echo $_GET['keyword'] ?>" size="10"/>
     	    <input type="submit" name="submit" value="Filter"/>
             </form>
             </p>
@@ -294,7 +292,7 @@ function get_status_list() {
     return $rows;
 }
 
-function get_post_list($category, $status) {
+function get_post_list($category, $status, $keyword) {
     global $wpdb;
     
     if (($category) && ($category != 'all')) {
@@ -321,6 +319,9 @@ function get_post_list($category, $status) {
         $sql .= "p.post_status='" .$status."' ";
     } else {
         $sql .= "p.post_status='publish' ";
+    }
+    if ($keyword) {
+        $sql .= "and p.post_title like '%" . $keyword ."%' ";
     }
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
 

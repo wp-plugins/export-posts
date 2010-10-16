@@ -42,16 +42,19 @@ function export_posts_settings_page() {
 
 <table width="510">
 <tr valign="top">
-<th width="92" scope="row">Enter Text</th>
+<th width="120" scope="row">Exported Status</th>
 <td width="406">
-<input name="hello_world_data" type="text" id="hello_world_data"
-value="<?php echo get_option('hello_world_data'); ?>" />
-(ex. Hello World)</td>
+<input name="export_posts_status" type="text" id="export_posts_status"
+value="<?php echo get_option('export_posts_status'); ?>" />
+(ex. printed)</td>
+</tr>
+<tr>
+<td colspan="2"><em>Post Status after post has been exported.</em></td>
 </tr>
 </table>
 
 <input type="hidden" name="action" value="update" />
-<input type="hidden" name="page_options" value="hello_world_data" />
+<input type="hidden" name="page_options" value="export_posts_status" />
 
 <p>
 <input type="submit" value="<?php _e('Save Changes') ?>" />
