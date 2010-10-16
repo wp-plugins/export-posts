@@ -47,9 +47,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	        $zip->addEmptyDir('stories');
             $exported_status = get_option('export_posts_status');
     		foreach ($rows as $row) {
-    		    # update the status to printed
-    		    $sql = "UPDATE " . $wpdb->posts . " p SET p.post_status = '" . $exported_status . "' WHERE p.ID = " . $row->ID;
-                $wpdb->query($sql);
+    		    if ($export_posts_status) {
+    		        # update the status to printed
+    		        $sql = "UPDATE " . $wpdb->posts . " p SET p.post_status = '" . $exported_status . "' WHERE p.ID = " . $row->ID;
+                    $wpdb->query($sql);
+                }
                 $story = '';
                 $xml = "<export-posts>\n";
                 $xml .= "\t<post>\n";
