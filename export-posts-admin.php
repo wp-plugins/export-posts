@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     $in =  $_POST['selected_values'];
 
-	$sql = "SELECT p.ID, u.user_nicename, p.post_title, p.post_content, p.post_date, p.guid ";
+	$sql = "SELECT p.ID, u.display_name, p.post_title, p.post_content, p.post_date, p.guid ";
 	$sql .= "FROM " . $wpdb->prefix . "posts as p, ". $wpdb->prefix ."users as u ";
 	$sql .= "WHERE p.ID in (". rtrim($in, ",") . ") AND p.post_type = 'post' AND p.post_status = 'publish' AND u.ID = p.post_author ";
 	$sql .= "GROUP BY p.ID ";
@@ -83,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		        $xml .= "\t\t<title>". $row->post_title . "</title>\n";
     		    }
     		    if ($_POST['author']) {
-    		        $story .= $row->user_nicename . "\n";
-    		        $xml .= "\t\t<author>". $row->user_nicename . "</author>\n";
+    		        $story .= $row->display_name . "\n";
+    		        $xml .= "\t\t<author>". $row->display_name . "</author>\n";
     		    }
     		    if ($_POST['date']) {
     		        $story .= $row->post_date . "\n";
@@ -240,7 +240,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         <p>
             <b>Fields to include:</b><br/>
             <input type="checkbox" name="title" value="1" checked="checked"/> Title
-            <input type="checkbox" name="author" value="1"/> Author
+            <input type="checkbox" name="author" value="1" checked="checked"/> Author
             <input type="checkbox" name="date" value="1"/> Date
             <input type="checkbox" name="content" value="1" checked="checked"/> Content
             <input type="checkbox" name="photo" value="1"/> Feature Photo
