@@ -33,6 +33,7 @@ function export_posts_admin_menu() {
 }
 
 function export_posts_settings_page() {
+    global $wpdb;
 ?>
 <div>
 <h2>Export Post Options</h2>
@@ -42,19 +43,27 @@ function export_posts_settings_page() {
 
 <table width="510">
 <tr valign="top">
-<th width="120" scope="row">Exported Status</th>
+<th width="120" scope="row">Exported Tag</th>
 <td width="406">
-<input name="export_posts_status" type="text" id="export_posts_status"
-value="<?php echo get_option('export_posts_status'); ?>" />
-(ex. printed)</td>
-</tr>
-<tr>
-<td colspan="2"><em>Post Status after post has been exported.</em></td>
+<?php $tag_id = get_option('export_posts_tag'); ?>
+<select name="export_posts_tag">
+<?php
+    $sql = "SELECT t.term_id, t.name from " . $wpdb->terms . " t, " . $wpdb->term_taxonomy;
+    $sql .= " l where t.term_id=l.term_id and l.taxonomy='post_tag' order by t.name";
+	$tags = $wpdb->get_results($sql);
+?>
+<?php foreach ($tags as $tag) { ?>
+    <option value="<?php echo $tag->term_id; ?>" <?php if ($tag_id == $tag->term_id) { echo " selected"; } ?>>
+        <?php echo $tag->name ?>
+    </option>
+<?php } ?>
+</select>
+</td>
 </tr>
 </table>
 
 <input type="hidden" name="action" value="update" />
-<input type="hidden" name="page_options" value="export_posts_status" />
+<input type="hidden" name="page_options" value="export_posts_tag" />
 
 <p>
 <input type="submit" value="<?php _e('Save Changes') ?>" />

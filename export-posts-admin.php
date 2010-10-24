@@ -1,6 +1,4 @@
-    
 <?php
-
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     if ($_POST["submit"] == 'Clear Old Zip Files') {
@@ -45,13 +43,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	    $res = $zip->open($filename, ZipArchive::CREATE) or die('Could not create file.');
 	    if ($res == TRUE) {
 	        $zip->addEmptyDir('stories');
-            $exported_status = get_option('export_posts_status');
+            $export_posts_tag = get_option('export_posts_tag');
+            if ($export_posts_tag) {
+                $sql = "SELECT t.term_taxonomy_id FROM " . $wpdb->term_taxonomy . " t WHERE t.term_id = " . $export_posts_tag;
+                $tax_id = $wpdb->get_row($sql);        
+            }
     		foreach ($rows as $row) {
-    		    if ($export_posts_status) {
+                if ($export_posts_tag) {
     		        # update the status to printed
-    		        $sql = "UPDATE " . $wpdb->posts . " p SET p.post_status = '" . $exported_status . "' WHERE p.ID = " . $row->ID;
+    		        $sql = "INSERT INTO " . $wpdb->term_relationships . " (object_id, term_taxonomy_id, term_order) VALUES ";
+    		        $sql .= "(". $row->ID . ", ". $tax_id->term_taxonomy_id . ", 0)";
                     $wpdb->query($sql);
                 }
+                $images =& get_children('post_type=attachment&post_mime_type=image&post_parent=1');
+                
+                if ($images) {
+                    $image_xml = "\t\t<images>\n";
+                    if ($_POST['output'] == 'html') {
+                        $image_text = "<br/>Attached Images:<br/>";
+                    } else {
+                        $image_text = "\nAttached Images:\n";
+                    }
+                    foreach ($images as $image) {
+                        $image_text .= "\t" . $image->guid;
+                        if ($_POST['output'] == 'html') {
+                            $image_text .= "<br/";
+                        } 
+                        $image_text .= "\n";
+                        $image_xml .= "\t\t\t<image>" . $image->guid . "</image>\n";
+                    }
+                    $image_xml .= "\t\t</images>\n";
+                }
+                
                 $story = '';
                 $xml = "<export-posts>\n";
                 $xml .= "\t<post>\n";
@@ -71,7 +94,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		        $story .= "\n" . $row->post_content;
     		        $xml .= "\t\t<content>". strip_tags($row->post_content) . "\t\t</content>\n";
     		    }
-    		    
+    		
+                if ($_POST['photo']) {
+                    $story .= $image_text;         
+                    $xml .= $image_xml;   
+                }
+                
+                    
     		    $xml .= "\t</post>\n</export-posts>\n";
     		    $extension = ".txt";
     		    if ($_POST['output'] != 'html') {
@@ -80,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 if ($_POST['output'] == 'html') { $extension = ".html"; }
                 if ($_POST['output'] == 'xml') { $extension = ".xml"; }
+
 
                 $story = iconv("UTF-8", "ascii//IGNORE", $story);
                 $story = preg_replace("/&amp;/", "&", $story);
@@ -92,7 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		    }
     		}
     		$zip->close();  
-
             ?>
 
             <div id="content" class="narrowcolumn">
@@ -111,14 +140,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	endif;
 	
 } else {
-$dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword']);
+$dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], $_GET['tag']);
 ?>
 
 <div id="content" class="narrowcolumn">
-	
+
 	<p>
     	    <p >
-            <form name="filter" action="" method="GET" style="text-align: center; width: 750px;">
+            <form name="filter" action="" method="GET" style="text-align: center; width: 800px;">
             <input type="hidden" name="page" value="Export-Posts"/>
     	    <?php $categories = get_categories(); ?>
     	    Category: <select name="category">
@@ -133,6 +162,21 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword']);
     	        endforeach;
     	    ?>
     	 	    </select>
+    	 	Tag: <select name="tag">
+    	 	<option value="all">All Tags</option>
+    	 	<?php
+                $sql = "SELECT t.term_id, t.name from " . $wpdb->terms . " t, " . $wpdb->term_taxonomy;
+                $sql .= " l where t.term_id=l.term_id and l.taxonomy='post_tag' order by t.name";
+            	$tags = $wpdb->get_results($sql);
+    	 	    foreach ($tags as $tag):
+    	 	?>
+    	 	<option value="<?php echo $tag->term_id; ?>" <?php if ($_GET['tag'] == $tag->term_id) { echo " selected"; }?>>
+    	 	<?php echo $tag->name; ?>
+    	 	</option>
+    	 	<?php
+    	 	    endforeach;
+    	 	?>
+    	 	</select>
     	 	Status: <select name="status">
     	 	<option value="all">All Statuses</option>
     	 	<?php
@@ -144,7 +188,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword']);
     	        endforeach;
     	    ?>
     	    </select>
-    	    Keyword: <input type="text" name="keyword" value="<?php echo $_GET['keyword'] ?>" size="10"/>
+    	    Keyword: <input type="text" name="keyword" value="<?php echo $_GET['keyword'] ?>" size="8"/>
     	    <input type="submit" name="submit" value="Filter"/>
             </form>
             </p>
@@ -161,7 +205,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword']);
         	    ?>
         	<p></p>
     		<form id="export_posts" method="post" action="">
-            <select id="export_post_entries" multiple="multiple" size="12" style="height: auto; width: 750px;">
+            <select id="export_post_entries" multiple="multiple" size="12" style="height: auto; width: 800px;">
     	    <?php
     			foreach ($dumprows as $dump) :
     		?>
@@ -174,7 +218,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword']);
     		echo "</select>";
 
     	?>		
-        <p style="text-align: center; width: 750px;">
+        <p style="text-align: center; width: 800px;">
         <input type="button" id="add_selected" value="Add Selected Posts"/>
         <input type="button" id="remove_selected" value="Remove Selected Posts"/> 
         <input type="button" id="add_all" value="Add All Posts"/> 
@@ -182,7 +226,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword']);
         </p>
     	<p>
     	Selected Posts:<br/>
-        <select id="selected" multiple="multiple" size="12" style="height: auto; width: 750px;">
+        <select id="selected" multiple="multiple" size="12" style="height: auto; width: 800px;">
     	</select>
 		</p>
 
@@ -199,6 +243,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword']);
             <input type="checkbox" name="author" value="1"/> Author
             <input type="checkbox" name="date" value="1"/> Date
             <input type="checkbox" name="content" value="1" checked="checked"/> Content
+            <input type="checkbox" name="photo" value="1"/> Feature Photo
         </p>
         
         <p style="text-align: center; width: 750px;">
@@ -209,7 +254,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword']);
 	    <?php
 	    else:
 	    ?>
-	    <p style="text-align: center; width: 750px;">
+	    <p style="text-align: center; width: 800px;">
 	    No posts match the selected filter.
 	    </p>
 	    <?php
@@ -294,7 +339,7 @@ function get_status_list() {
     return $rows;
 }
 
-function get_post_list($category, $status, $keyword) {
+function get_post_list($category, $status, $keyword, $tag) {
     global $wpdb;
     
     if (($category) && ($category != 'all')) {
@@ -304,29 +349,40 @@ function get_post_list($category, $status, $keyword) {
         $cat_row = $wpdb->get_row($cat_sql);
 
     }
+    
+    if (($tag) && ($tag != 'all')) {
+        $tag_sql = "SELECT l.object_id FROM " . $wpdb->term_relationships . " l, ";
+        $tag_sql .= $wpdb->term_taxonomy . " t where t.term_taxonomy_id = l.term_taxonomy_id ";
+        $tag_sql .= " and t.term_id = " . $tag; 
+    }
+    
     $sql =  "SELECT p.ID, u.user_nicename, p.post_title, ";
     $sql .= "SUM(LENGTH(p.post_content) - LENGTH(REPLACE(p.post_content, ' ', ''))+1) as words ";
     $sql .= "FROM " . $wpdb->posts . " p, " . $wpdb->users . " u ";
     $sql .= "WHERE p.post_author = u.ID and ";
-    $sql .= "p.post_type='post' and ";
     if (($category) && ($category != 'all')) {
         $catsql = "SELECT r.object_id ";
         $catsql .= "FROM ". $wpdb->terms . " t, " . $wpdb->term_taxonomy . " x, ";
         $catsql .= $wpdb->term_relationships . " r ";
         $catsql .= "WHERE t.slug = '". $category ."' and t.term_id = x.term_id ";
         $catsql .= "and x.term_taxonomy_id = r.term_taxonomy_id";
-        $sql .= "p.ID in (" . $catsql . ") and ";
+        $sql .= "p.ID in (" . $catsql . ") ";
     }
+
+    if (($tag) && ($tag != 'all')) {
+        $sql .= "p.ID in (" . $tag_sql . ") and ";
+    }
+
     if (($status) && ($status != 'all')) {
-        $sql .= "p.post_status='" .$status."' ";
-    } else {
-        $sql .= "p.post_status='publish' ";
+        $sql .= "p.post_status='" .$status."' and ";
     }
     if ($keyword) {
-        $sql .= "and p.post_title like '%" . $keyword ."%' ";
+        $sql .= "p.post_title like '%" . $keyword ."%' and ";
     }
+    $sql .= "p.post_type='post' ";
+    
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
-
+    #print $sql;
     $rows = $wpdb->get_results($sql);
 
     return $rows;
