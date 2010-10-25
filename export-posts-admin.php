@@ -175,7 +175,9 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
                 $sql = "SELECT t.term_id, t.name from " . $wpdb->terms . " t, " . $wpdb->term_taxonomy;
                 $sql .= " l where t.term_id=l.term_id and l.taxonomy='post_tag' order by t.name";
             	$tags = $wpdb->get_results($sql);
+            	$export_tag = get_option('export_posts_tag');
     	 	    foreach ($tags as $tag):
+    	 	    if ($tag->name == $export_tag) { continue; }
     	 	?>
     	 	<option value="<?php echo $tag->term_id; ?>" <?php if ($_GET['tag'] == $tag->term_id) { echo " selected"; }?>>
     	 	<?php echo $tag->name; ?>
@@ -387,7 +389,7 @@ function get_post_list($category, $status, $keyword, $tag) {
         $sql .= "p.post_title like '%" . $keyword ."%' and ";
     }
     
-    if ((get_option('export_posts_tag')) && (($tag == 'all') || (!$tag))) {
+    if (get_option('export_posts_tag')) {
         $exclude_tag = get_or_create_tag(get_option('export_posts_tag'));
         
         $exclude_tag_sql = "SELECT l.object_id FROM " . $wpdb->term_relationships . " l, ";
