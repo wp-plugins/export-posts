@@ -189,6 +189,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     	 	<?php
     	 	    $status = get_status_list();
     	 	    foreach ($status as $stat):
+    	 	    if ($stat->post_status == 'auto-draft') { continue; }
     	    ?>
                 <option<?php if ($_GET['status'] == $stat->post_status) { echo " selected"; }?>><?php echo $stat->post_status;?></option>
     	    <?php
@@ -386,7 +387,7 @@ function get_post_list($category, $status, $keyword, $tag) {
         $sql .= "p.post_title like '%" . $keyword ."%' and ";
     }
     
-    if ((get_option('export_posts_tag')) && ($tag == 'all')) {
+    if ((get_option('export_posts_tag')) && (($tag == 'all') || (!$tag))) {
         $exclude_tag = get_or_create_tag(get_option('export_posts_tag'));
         
         $exclude_tag_sql = "SELECT l.object_id FROM " . $wpdb->term_relationships . " l, ";
@@ -396,10 +397,10 @@ function get_post_list($category, $status, $keyword, $tag) {
         $sql .= "p.ID not in (" . $exclude_tag_sql . ") and ";
     }
     
-    $sql .= "p.post_type='post' ";
+    $sql .= "p.post_type='post' and p.post_status <> 'auto-draft'";
     
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
-   # print  '<pre>' . $sql . '</pre>';
+    #print  '<p>' . $sql . '</p>';
     $rows = $wpdb->get_results($sql);
 
     return $rows;
