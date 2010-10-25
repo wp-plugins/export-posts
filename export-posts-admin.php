@@ -10,11 +10,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 	$sql = "SELECT p.ID, u.display_name, p.post_title, p.post_content, p.post_date, p.guid ";
 	$sql .= "FROM " . $wpdb->prefix . "posts as p, ". $wpdb->prefix ."users as u ";
-	$sql .= "WHERE p.ID in (". rtrim($in, ",") . ") AND p.post_type = 'post' AND p.post_status = 'publish' AND u.ID = p.post_author ";
+	$sql .= "WHERE p.ID in (". rtrim($in, ",") . ") AND p.post_type = 'post' AND u.ID = p.post_author ";
 	$sql .= "GROUP BY p.ID ";
 	$sql .= "ORDER BY p.post_date desc";
-
+    
 	$rows = $wpdb->get_results($sql);
+
 	if ($rows) :
 	    # create zip file
         $f = 'stories-'.time().'.zip';
@@ -44,19 +45,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	    if ($res == TRUE) {
 	        $zip->addEmptyDir('stories');
             $export_posts_tag = get_option('export_posts_tag');
-            if ($export_posts_tag) {
-                $sql = "SELECT t.term_taxonomy_id FROM " . $wpdb->term_taxonomy . " t WHERE t.term_id = " . $export_posts_tag;
-                $tax_id = $wpdb->get_row($sql);        
-            }
+            $export_posts_tag_id = 0;
+
     		foreach ($rows as $row) {
                 if ($export_posts_tag) {
     		        # update the status to printed
-    		        $sql = "INSERT INTO " . $wpdb->term_relationships . " (object_id, term_taxonomy_id, term_order) VALUES ";
-    		        $sql .= "(". $row->ID . ", ". $tax_id->term_taxonomy_id . ", 0)";
+                    $tag = get_or_create_tag($export_posts_tag);
+                    $wpdb->insert($wpdb->term_relationships, 
+                        array('object_id' => $row->ID, 'term_taxonomy_id' => $tag['term_taxonomy_id'], 'term_order' => 0),
+                        array('%d', '%s', '%d'));
+                    
                     $wpdb->query($sql);
                 }
-                $images =& get_children('post_type=attachment&post_mime_type=image&post_parent=1');
-                
+
+                $att_array = array(
+                    'post_parent' => $row->ID, 'post_type' => 'attachment',
+                    'post_mime_type' => 'image', 'order_by' => 'menu_order');
+                $images = get_children($att_array);
+
                 if ($images) {
                     $image_xml = "\t\t<images>\n";
                     if ($_POST['output'] == 'html') {
@@ -122,6 +128,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		    }
     		}
     		$zip->close();  
+
+            # update tag_count
+            if ($export_posts_tag) {
+		        # update the status to printed
+                $tag = get_or_create_tag($export_posts_tag);
+                $update_tag_sql = "UPDATE " . $wpdb->term_taxonomy . " t SET count=". 
+                $update_tag_sql .= "(SELECT count(l.object_id) FROM " . $wpdb->term_relationships . " l ";
+                $update_tag_sql .= "WHERE l.term_taxonomy_id = " . $tag['term_taxonomy_id'] . ") ";
+                $update_tag_sql .= "WHERE t.term_taxonomy_id = ". $tag['term_taxonomy_id'];
+                $wpdb->query($update_tag_sql);
+            }
             ?>
 
             <div id="content" class="narrowcolumn">
@@ -133,7 +150,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
 
             <?php 
-
 	    } else {
 	        print "Could not create zip file";
 	    }
@@ -341,7 +357,6 @@ function get_status_list() {
 
 function get_post_list($category, $status, $keyword, $tag) {
     global $wpdb;
-    
     if (($category) && ($category != 'all')) {
 
         $cat_sql = "SELECT term_id FROM " . $wpdb->terms . " ";
@@ -379,15 +394,84 @@ function get_post_list($category, $status, $keyword, $tag) {
     if ($keyword) {
         $sql .= "p.post_title like '%" . $keyword ."%' and ";
     }
+    
+    if ((get_option('export_posts_tag')) && ($tag == 'all')) {
+        $exclude_tag = get_or_create_tag(get_option('export_posts_tag'));
+        
+        $exclude_tag_sql = "SELECT l.object_id FROM " . $wpdb->term_relationships . " l, ";
+        $exclude_tag_sql .= $wpdb->term_taxonomy . " t WHERE t.term_taxonomy_id = l.term_taxonomy_id ";
+        $exclude_tag_sql .= " and t.term_id = " . $exclude_tag['term_id'];
+        
+        $sql .= "p.ID not in (" . $exclude_tag_sql . ") and ";
+    }
+    
     $sql .= "p.post_type='post' ";
     
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
-    #print $sql;
+   # print  '<pre>' . $sql . '</pre>';
     $rows = $wpdb->get_results($sql);
 
     return $rows;
 }
+/**
+ * Modifies a string to remove al non ASCII characters and spaces.
+ */
+function slugify($text)
+{
+    // replace non letter or digits by -
+    $text = preg_replace('~[^\\pL\d]+~u', '-', $text);
+ 
+    // trim
+    $text = trim($text, '-');
+ 
+    // transliterate
+    if (function_exists('iconv'))
+    {
+        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+    }
+ 
+    // lowercase
+    $text = strtolower($text);
+ 
+    // remove unwanted characters
+    $text = preg_replace('~[^-\w]+~', '', $text);
+ 
+    if (empty($text))
+    {
+        return 'n-a';
+    }
+ 
+    return $text;
+}
 
-?>
-
+function get_or_create_tag($tag) {
+    # this function will create the tag if it doesn't exist
+    global $wpdb;
     
+    $sql = "SELECT l.term_id, t.term_taxonomy_id FROM " . $wpdb->terms . " l, " . $wpdb->term_taxonomy . " t ";
+    $sql .= "WHERE l.term_id=t.term_id and t.taxonomy = 'post_tag' and ";
+    $sql .= "l.name = '" .$tag . "'";
+    
+    $row = $wpdb->get_row($sql);
+    
+    if ($row) {
+        $term_id = $row->term_id;
+        $term_taxonomy_id = $row->term_taxonomy_id;
+    } else {
+        # create the tag
+        $wpdb->insert($wpdb->terms, 
+            array('name' => $tag, 'slug' => slugify($tag), 'term_group' => 0), 
+            array('%s', '%s', '%d'));
+        $term_id = $wpdb->insert_id;
+        
+        # create taxonomy
+        $wpdb->insert($wpdb->term_taxonomy, 
+            array('term_id' => $term_id, 'taxonomy' => 'post_tag', 'description' => '', 
+                'parent' => 0, 'count' => 0),
+            array('%d', '%s', '%s', '%d', '%d'));
+        $term_taxonomy_id = $wpdb->insert_id;
+    }    
+    
+    return array('term_id' => $term_id, 'term_taxonomy_id' => $term_taxonomy_id);
+}
+?>
