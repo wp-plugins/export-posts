@@ -58,27 +58,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $wpdb->query($sql);
                 }
 
-                $att_array = array(
-                    'post_parent' => $row->ID, 'post_type' => 'attachment',
-                    'post_mime_type' => 'image', 'order_by' => 'menu_order');
-                $images = get_children($att_array);
+                $feature_image = get_featured_image($row->ID);   
 
-                if ($images) {
-                    $image_xml = "\t\t<images>\n";
+                if ($feature_image) {
+                    $image_xml = "\t\t<featured_image>\n";
                     if ($_POST['output'] == 'html') {
-                        $image_text = "<br/>Attached Images:<br/>";
+                        $image_text = "<br/><br/>Featured Image: ";
                     } else {
-                        $image_text = "\nAttached Images:\n";
+                        $image_text = "\n\nFeatured Image: ";
                     }
-                    foreach ($images as $image) {
-                        $image_text .= "\t" . $image->guid;
-                        if ($_POST['output'] == 'html') {
-                            $image_text .= "<br/";
-                        } 
-                        $image_text .= "\n";
-                        $image_xml .= "\t\t\t<image>" . $image->guid . "</image>\n";
-                    }
-                    $image_xml .= "\t\t</images>\n";
+                    $image_text .= $feature_image;
+                    $image_xml .= $feature_image;
+                    $image_xml .= "\t\t</featured_image>\n";
                 }
                 
                 $story = '';
@@ -101,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		        $xml .= "\t\t<content>". strip_tags($row->post_content) . "\t\t</content>\n";
     		    }
     		
-                if ($_POST['photo']) {
+                if (($_POST['photo']) && ($feature_image)) {
                     $story .= $image_text;         
                     $xml .= $image_xml;   
                 }
@@ -473,5 +464,19 @@ function get_or_create_tag($tag) {
     }    
     
     return array('term_id' => $term_id, 'term_taxonomy_id' => $term_taxonomy_id);
+}
+
+function get_featured_image($post_id) {
+    $feature_image = get_the_post_thumbnail($post_id, 'full');
+    $images = array();
+    if ($feature_image) {
+        $doc=new DOMDocument();
+        $doc->loadHTML($feature_image);
+        $xml=simplexml_import_dom($doc);
+        $images=$xml->xpath('//img');
+        $feature_image = basename($images[0]['src']);
+    }
+    
+    return $feature_image;    
 }
 ?>
