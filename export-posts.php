@@ -45,19 +45,7 @@ function export_posts_settings_page() {
 <tr valign="top">
 <th width="120" scope="row">Exported Tag</th>
 <td width="406">
-<?php $tag_id = get_option('export_posts_tag'); ?>
-<select name="export_posts_tag">
-<?php
-    $sql = "SELECT t.term_id, t.name from " . $wpdb->terms . " t, " . $wpdb->term_taxonomy;
-    $sql .= " l where t.term_id=l.term_id and l.taxonomy='post_tag' order by t.name";
-	$tags = $wpdb->get_results($sql);
-?>
-<?php foreach ($tags as $tag) { ?>
-    <option value="<?php echo $tag->term_id; ?>" <?php if ($tag_id == $tag->term_id) { echo " selected"; } ?>>
-        <?php echo $tag->name ?>
-    </option>
-<?php } ?>
-</select>
+<input type="text" name="export_posts_tag" value="<?php echo get_option('export_posts_tag'); ?>"/>
 </td>
 </tr>
 </table>
