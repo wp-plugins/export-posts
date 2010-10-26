@@ -375,7 +375,7 @@ function get_post_list($category, $status, $keyword, $tag) {
         $catsql .= $wpdb->term_relationships . " r ";
         $catsql .= "WHERE t.slug = '". $category ."' and t.term_id = x.term_id ";
         $catsql .= "and x.term_taxonomy_id = r.term_taxonomy_id";
-        $sql .= "p.ID in (" . $catsql . ") ";
+        $sql .= "p.ID in (" . $catsql . ") and ";
     }
 
     if (($tag) && ($tag != 'all')) {
@@ -399,7 +399,7 @@ function get_post_list($category, $status, $keyword, $tag) {
         $sql .= "p.ID not in (" . $exclude_tag_sql . ") and ";
     }
     
-    $sql .= "p.post_type='post' and p.post_status <> 'auto-draft'";
+    $sql .= "p.post_type='post' and p.post_status <> 'auto-draft' ";
     
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
     #print  '<p>' . $sql . '</p>';
