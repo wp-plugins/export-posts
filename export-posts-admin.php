@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	$sql .= "WHERE p.ID in (". rtrim($in, ",") . ") AND p.post_type = 'post' AND u.ID = p.post_author ";
 	$sql .= "GROUP BY p.ID ";
 	$sql .= "ORDER BY p.post_date desc";
-    
+
 	$rows = $wpdb->get_results($sql);
 
 	if ($rows) :
@@ -102,14 +102,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		    $extension = ".txt";
     		    if ($_POST['output'] != 'html') {
                     $story = strip_tags($story);
+                } else {
+                    $html_head = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\n";
+                    $html_head .= "\t\"http://www.w3.org/TR/html4/strict.dtd\">\n";
+                    $html_head .= "<head>\n\t<title>" . $row->post_title . "</title>\n";
+                    $html_head .= "\t<meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\">\n";
+                    $html_head .= "</head>\n<body>\n";
+                    
+                    $html_tail = "\n</body>\n</html>\n";
+                    $story = nl2br($story);
+                    $story = $html_head . $story . $html_tail;
                 }
                 
                 if ($_POST['output'] == 'html') { $extension = ".html"; }
                 if ($_POST['output'] == 'xml') { $extension = ".xml"; }
 
 
-                $story = iconv("UTF-8", "ascii//IGNORE", $story);
-                $story = preg_replace("/&amp;/", "&", $story);
+               $story = iconv("UTF-8", "ascii//TRANSLIT", $story);
 
     		    $zip_name = "stories/" . $row->post_title . $extension;
     		    if ($_POST['output'] == 'xml') {
