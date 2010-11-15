@@ -198,6 +198,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     	 	Status: <select name="status">
     	 	<option value="all">All Statuses</option>
     	 	<?php
+    	 	    if (!$_GET['status']) { $_GET['status'] = 'publish'; }
     	 	    $status = get_status_list();
     	 	    foreach ($status as $stat):
     	 	    if ($stat->post_status == 'auto-draft') { continue; }
@@ -480,32 +481,6 @@ function get_or_create_tag($tag) {
 
 function get_featured_image($post_id) {
     $feature_image = get_the_post_thumbnail($post_id, 'full');
-
-/*    print '<pre>';
-    
-    $id = get_post_thumbnail_id($post_id);
-    $img = wp_get_attachment_image($id);
-    print_r($img);
-    
-    print "<br/>" . $post_id . "<br/>";
-    $args = array(
-    	'post_type' => 'attachment',
-    	'numberposts' => -1,
-    	'post_status' => null,
-    	'post_parent' => $post_id, // any parent
-    	); 
-    $attachments = get_posts($args);
-    if ($attachments) {
-    	foreach ($attachments as $post) {
-    		setup_postdata($post);
-    		print_r($post);
-#    		the_title();
-#    		the_attachment_link($post->ID, false);
-#    		the_excerpt();
-    	}
-    }
-
-    print '</pre>'; */
     $feature_image = get_the_post_thumbnail($post_id, 'full');
     
     $images = array();
