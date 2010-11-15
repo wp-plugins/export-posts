@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	$sql .= "ORDER BY p.post_date desc";
 
 	$rows = $wpdb->get_results($sql);
-
+   # print "<pre>" . $sql . "</pre>";
 	if ($rows) :
 	    # create zip file
         $f = 'stories-'.time().'.zip';
@@ -480,13 +480,41 @@ function get_or_create_tag($tag) {
 
 function get_featured_image($post_id) {
     $feature_image = get_the_post_thumbnail($post_id, 'full');
+
+/*    print '<pre>';
+    
+    $id = get_post_thumbnail_id($post_id);
+    $img = wp_get_attachment_image($id);
+    print_r($img);
+    
+    print "<br/>" . $post_id . "<br/>";
+    $args = array(
+    	'post_type' => 'attachment',
+    	'numberposts' => -1,
+    	'post_status' => null,
+    	'post_parent' => $post_id, // any parent
+    	); 
+    $attachments = get_posts($args);
+    if ($attachments) {
+    	foreach ($attachments as $post) {
+    		setup_postdata($post);
+    		print_r($post);
+#    		the_title();
+#    		the_attachment_link($post->ID, false);
+#    		the_excerpt();
+    	}
+    }
+
+    print '</pre>'; */
+    $feature_image = get_the_post_thumbnail($post_id, 'full');
+    
     $images = array();
     if ($feature_image) {
         $doc=new DOMDocument();
         $doc->loadHTML($feature_image);
         $xml=simplexml_import_dom($doc);
         $images=$xml->xpath('//img');
-        $feature_image = basename($images[0]['src']);
+        $feature_image = basename($images[0]['src']) . " ('" . $images[0]['alt'] . "')";
     }
     
     return $feature_image;    
