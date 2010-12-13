@@ -28,7 +28,7 @@ add_action('admin_enqueue_scripts', 'add_admin_scripts');
 add_action('admin_menu', 'export_posts_admin_menu');
 
 function export_posts_admin_menu() {
-    add_options_page('Export Posts', 'Export Ports', 'administrator',
+    add_options_page('Export Posts', 'Export Posts', 'administrator',
         'export-posts', 'export_posts_settings_page');
 }
 

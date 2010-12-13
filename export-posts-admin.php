@@ -144,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div id="content" class="narrowcolumn">
 
             	<p>
-                You can download your zip file <a href="<?php echo $url; ?>">here</a>.
+                You can download your zip file <a id="zip_url" href="<?php echo $url; ?>">here</a>.
             	</p>
 
             </div>
@@ -295,6 +295,10 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
             }
             ids = ids.slice(0, -1);
             jQuery('#selected_values').val(ids);
+            jQuery.post(window.location, jQuery("#export_posts").serialize(), function(data){
+                window.location.replace(jQuery(data).find("#zip_url").attr("href"));
+            });
+            return false;
         });
         
         jQuery("#remove_all").click(function() {
@@ -340,7 +344,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
                 }
             });
         });
-
+        
     });
 </script>
 <?php 
