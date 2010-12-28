@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     $in =  $_POST['selected_values'];
 
-	$sql = "SELECT p.ID, u.display_name, p.post_title, p.post_content, p.post_date, p.guid ";
+	$sql = "SELECT p.ID, u.ID as user_id, u.display_name, p.post_title, p.post_content, p.post_date, p.guid ";
 	$sql .= "FROM " . $wpdb->prefix . "posts as p, ". $wpdb->prefix ."users as u ";
 	$sql .= "WHERE p.ID in (". rtrim($in, ",") . ") AND p.post_type = 'post' AND u.ID = p.post_author ";
 	$sql .= "GROUP BY p.ID ";
@@ -80,8 +80,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		        $xml .= "\t\t<title>". $row->post_title . "</title>\n";
     		    }
     		    if ($_POST['author']) {
+    		        $user_title = get_user_meta($row->user_id, 'user_title', True);
     		        $story .= $row->display_name . "\n";
     		        $xml .= "\t\t<author>". $row->display_name . "</author>\n";
+    		        if ($user_title) {
+    		            $story .= $user_title . "\n";
+    		            $xml .= "\t\t<author-title>" . $user_title . "</author-title\n";
+    		        }
     		    }
     		    if ($_POST['date']) {
     		        $story .= $row->post_date . "\n";
