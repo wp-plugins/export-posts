@@ -88,7 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		        $xml .= "\t\t<date>". $row->post_date . "</date>\n";
     		    }
     		    if ($_POST['content']) {
-    		        $story .= "\n" . $row->post_content;
+    		        $html_story = $story . "\n" . $row->post_content;
+    		        $story .= "\n" . replace_empty_lines(strip_tags($row->post_content));
     		        $xml .= "\t\t<content>". strip_tags($row->post_content) . "\t\t</content>\n";
     		    }
     		
@@ -110,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $html_head .= "</head>\n<body>\n";
                     
                     $html_tail = "\n</body>\n</html>\n";
-                    $story = nl2br($story);
+                    $story = nl2br($html_story);
                     $story = $html_head . $story . $html_tail;
                 }
                 
@@ -498,4 +499,12 @@ function get_featured_image($post_id) {
     
     return $feature_image;    
 }
+
+function replace_empty_lines($string)
+{
+    $string = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $string);
+    return str_replace("\\n\\n", "\\n", $string);
+}
+
 ?>
+
