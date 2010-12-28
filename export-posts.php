@@ -8,6 +8,9 @@ Version: 1.0.1
 Author URI: http://joeboydston.com
 */
 
+define( 'EXPORT_POSTS_URL' , plugins_url(plugin_basename(dirname(__FILE__)).'/') );
+
+
 //MENU
 function dump_menu() {
     global $wpdb;
@@ -22,8 +25,13 @@ function add_admin_scripts() {
 	wp_enqueue_script("jquery");
 }
 
+function add_admin_styles() {
+	wp_enqueue_style( 'export_posts-css', EXPORT_POSTS_URL.'css/export_posts.css', false );
+}
+
 add_action('admin_menu', 'dump_admin_actions');
 add_action('admin_enqueue_scripts', 'add_admin_scripts');
+add_action( 'admin_print_styles', 'add_admin_styles' );
 
 add_action('admin_menu', 'export_posts_admin_menu');
 
