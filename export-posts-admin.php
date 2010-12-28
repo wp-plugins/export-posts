@@ -162,14 +162,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	endif;
 	
 } else {
-$dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], $_GET['tag']);
+$dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], $_GET['tag'], $_GET['post_category']);
 ?>
 
 <div id="content" class="narrowcolumn">
 
 	<p>
     	    <p >
-            <form name="filter" action="" method="GET" style="text-align: center; width: 800px;">
+            <form id="filter" name="filter" action="" method="GET" style="text-align: center; width: 650px;">
             <input type="hidden" name="page" value="Export-Posts"/>
     	    <?php $categories = get_categories(); ?>
     	    Category: <select name="category">
@@ -218,7 +218,25 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     	    <input type="submit" name="submit" value="Filter"/>
             </form>
             </p>
-         	<?php
+            <div id="cat-filter">
+            <form id="cat-filter-form" name="cat-filter" action="" method="GET">
+            
+            <ul>
+            <?php 
+            $args = array(
+                'hide_empty' => 0,
+                'hierarchical' => true,
+                'popular_cats' => array(),
+                'selected_cats' => array(),
+                'title_li' => '<h3>Categories</h3>',
+                'walker' => new Export_Posts_Walker_Category_Checklist
+            );
+            wp_list_categories($args); ?>
+            </ul>
+            <input type="submit" value="Filter"/>
+            </form>
+            </div>
+            <?php
         		if ($dumprows) :
         	?>
         	    <?php
@@ -230,8 +248,9 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         	    }
         	    ?>
         	<p></p>
+        	
     		<form id="export_posts" method="post" action="">
-            <select id="export_post_entries" multiple="multiple" size="12" style="height: auto; width: 800px;">
+            <select id="export_post_entries" multiple="multiple" size="12" style="height: auto; width: 650px;">
     	    <?php
     			foreach ($dumprows as $dump) :
     		?>
@@ -244,7 +263,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     		echo "</select>";
 
     	?>		
-        <p style="text-align: center; width: 800px;">
+        <p style="text-align: center; width: 650px;">
         <input type="button" id="add_selected" value="Add Selected Posts"/>
         <input type="button" id="remove_selected" value="Remove Selected Posts"/> 
         <input type="button" id="add_all" value="Add All Posts"/> 
@@ -252,7 +271,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         </p>
     	<p>
     	Selected Posts:<br/>
-        <select id="selected" multiple="multiple" size="12" style="height: auto; width: 800px;">
+        <select id="selected" multiple="multiple" size="12" style="height: auto; width: 650px;">
     	</select>
 		</p>
 
@@ -351,6 +370,24 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
             });
         });
         
+        jQuery("#cat-filter-form input:submit").click(function() {
+            var params = jQuery("#filter").serialize()
+            if (jQuery("#cat-filter form").serialize()) {
+                params = params + '&' + jQuery("#cat-filter form").serialize();
+            }
+            window.location.search = params;
+            return false; 
+        });
+
+        jQuery("#filter input:submit").click(function() {
+            var params = jQuery("#filter").serialize()
+            if (jQuery("#cat-filter form").serialize()) {
+                params = params + '&' + jQuery("#cat-filter form").serialize();
+            }
+            window.location.search = params;
+            return false; 
+        });
+        
     });
 </script>
 <?php 
@@ -369,14 +406,16 @@ function get_status_list() {
     return $rows;
 }
 
-function get_post_list($category, $status, $keyword, $tag) {
+function get_post_list($category, $status, $keyword, $tag, $categories) {
     global $wpdb;
+    $cat_ids = "";
     if (($category) && ($category != 'all')) {
 
         $cat_sql = "SELECT term_id FROM " . $wpdb->terms . " ";
         $cat_sql .= "WHERE slug = '" . $category . "'";
-        $cat_row = $wpdb->get_row($cat_sql);
 
+        $cat_row = $wpdb->get_row($cat_sql);
+        $cat_ids = "(". $cat_row->term_id . ")";
     }
     
     if (($tag) && ($tag != 'all')) {
@@ -389,12 +428,21 @@ function get_post_list($category, $status, $keyword, $tag) {
     $sql .= "SUM(LENGTH(p.post_content) - LENGTH(REPLACE(p.post_content, ' ', ''))+1) as words ";
     $sql .= "FROM " . $wpdb->posts . " p, " . $wpdb->users . " u ";
     $sql .= "WHERE p.post_author = u.ID and ";
-    if (($category) && ($category != 'all')) {
-        $catsql = "SELECT r.object_id ";
+    if (($category) && ($category != 'all') || $categories) {
+        if ($categories) {
+            $cat_ids = $cat_row->term_id . ",";
+            foreach ($categories as $cat) {
+                $cat_ids .= $cat . ",";
+            }
+            $cat_ids = trim($cat_ids, ",");
+            $cat_ids = "(" . $cat_ids . ")";
+        } 
+        $catsql = "SELECT DISTINCT r.object_id ";
         $catsql .= "FROM ". $wpdb->terms . " t, " . $wpdb->term_taxonomy . " x, ";
         $catsql .= $wpdb->term_relationships . " r ";
-        $catsql .= "WHERE t.slug = '". $category ."' and t.term_id = x.term_id ";
+        $catsql .= "WHERE t.term_id IN ". $cat_ids ." and t.term_id = x.term_id ";
         $catsql .= "and x.term_taxonomy_id = r.term_taxonomy_id";
+
         $sql .= "p.ID in (" . $catsql . ") and ";
     }
 
@@ -509,6 +557,46 @@ function replace_empty_lines($string)
 {
     $string = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $string);
     return str_replace("\\n\\n", "\\n", $string);
+}
+
+class Export_Posts_Walker_Category_Checklist extends Walker {
+	var $tree_type = 'category';
+	var $db_fields = array ('parent' => 'parent', 'id' => 'term_id'); //TODO: decouple this
+
+	function start_lvl(&$output, $depth, $args) {
+		$indent = str_repeat("\t", $depth);
+		$output .= "$indent<ul class='children'>\n";
+	}
+
+	function end_lvl(&$output, $depth, $args) {
+		$indent = str_repeat("\t", $depth);
+		$output .= "$indent</ul>\n";
+	}
+
+	function start_el(&$output, $category, $depth, $args) {
+		extract($args);
+		if ( empty($taxonomy) )
+			$taxonomy = 'category';
+
+		if ( $taxonomy == 'category' )
+			$name = 'post_category';
+		else
+			$name = 'tax_input['.$taxonomy.']';
+
+        $selected = array();
+        if ($_GET['post_category']) {
+		    if  (in_array($category->term_id, $_GET['post_category'])) { 
+		        $selected = array($category->term_id);
+	        }
+	    }
+
+		$class = in_array( $category->term_id, $popular_cats ) ? ' class="popular-category"' : '';
+		$output .= "\n<li id='{$taxonomy}-{$category->term_id}'$class>" . '<label class="selectit"><input value="' . $category->term_id . '" type="checkbox" name="'.$name.'[]" id="in-'.$taxonomy.'-' . $category->term_id . '"' . checked( in_array( $category->term_id, $selected ), true, false ) . disabled( empty( $args['disabled'] ), false, false ) . ' /> ' . esc_html( apply_filters('the_category', $category->name )) . '</label>';
+	}
+
+	function end_el(&$output, $category, $depth, $args) {
+		$output .= "</li>\n";
+	}
 }
 
 ?>
