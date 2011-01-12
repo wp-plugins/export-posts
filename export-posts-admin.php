@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $feature_image = get_featured_image($row->ID);   
 
                 if ($feature_image) {
-                    $image_xml = "\t\t<featured_image>\n";
+                    $image_xml = "<featured_image>";
                     if ($_POST['output'] == 'html') {
                         $image_text = "<br/><br/>Featured Image: ";
                     } else {
@@ -71,33 +71,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     }
                     $image_text .= $feature_image;
                     $image_xml .= $feature_image;
-                    $image_xml .= "\t\t</featured_image>\n";
+                    $image_xml .= "</featured_image>\n";
                 }
                 
                 $story = '';
-                $xml = "<export-posts>\n";
-                $xml .= "\t<post>\n";
+                $xml .= "<". strtolower(strip_to_alpha_only($row->post_title)) .">\n";
                 if ($_POST['title']) {
     		        $story = $row->post_title . "\n";
-    		        $xml .= "\t\t<title>". $row->post_title . "</title>\n";
+    		        $xml .= "<title>". $row->post_title . "</title>\n";
     		    }
     		    if ($_POST['author']) {
     		        $user_title = get_user_meta($row->user_id, 'user_title', True);
     		        $story .= $row->display_name . "\n";
-    		        $xml .= "\t\t<author>". $row->display_name . "</author>\n";
+    		        $xml .= "<author>". $row->display_name . "</author>\n";
     		        if ($user_title) {
     		            $story .= $user_title . "\n";
-    		            $xml .= "\t\t<author-title>" . $user_title . "</author-title\n";
+    		            $xml .= "<author-title>" . $user_title . "</author-title\n";
     		        }
     		    }
     		    if ($_POST['date']) {
     		        $story .= $row->post_date . "\n";
-    		        $xml .= "\t\t<date>". $row->post_date . "</date>\n";
+    		        $xml .= "<date>". $row->post_date . "</date>\n";
     		    }
     		    if ($_POST['content']) {
     		        $html_story = $story . "\n" . $row->post_content;
-    		        $story .= "\n" . replace_empty_lines(strip_tags($row->post_content));
-    		        $xml .= "\t\t<content>". strip_tags($row->post_content) . "\t\t</content>\n";
+    		        $story .= "\n" . replace_empty_lines(strip_tags($row->post_content, '<b><i><strong><em>'));
+    		        $xml .= "<content>". strip_tags($row->post_content) . "\t\t</content>\n";
     		    }
     		
                 if (($_POST['photo']) && ($feature_image)) {
@@ -106,10 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
                 
                     
-    		    $xml .= "\t</post>\n</export-posts>\n";
+    		    $xml .= "</". strtolower(strip_to_alpha_only($row->post_title)) .">\n";
     		    $extension = ".txt";
     		    if ($_POST['output'] != 'html') {
-                    $story = strip_tags($story);
+                    $story = strip_tags($story, '<b><i><strong><em>');
                 } else {
                     $html_head = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\n";
                     $html_head .= "\t\"http://www.w3.org/TR/html4/strict.dtd\">\n";
@@ -226,7 +225,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
             <ul>
             <?php 
             $args = array(
-                'hide_empty' => 0,
+                'hide_empty' => 1,
                 'hierarchical' => true,
                 'popular_cats' => array(),
                 'selected_cats' => array(),
@@ -559,6 +558,12 @@ function replace_empty_lines($string)
 {
     $string = preg_replace("/(^[\r\n]*|[\r\n]+)[\s\t]*[\r\n]+/", "\n", $string);
     return str_replace("\\n\\n", "\\n", $string);
+}
+
+function strip_to_alpha_only($string)
+{
+     $pattern = '/[^a-zA-Z]/';
+     return preg_replace($pattern, '', $string);
 }
 
 ?>
