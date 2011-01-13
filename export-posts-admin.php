@@ -95,8 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		    }
     		    if ($_POST['content']) {
     		        $html_story = $story . "\n" . $row->post_content;
-    		        $story .= "\n" . replace_empty_lines(strip_tags($row->post_content, '<b><i><strong><em>'));
-    		        $xml .= "<content>". strip_tags($row->post_content) . "\t\t</content>\n";
+    		        $story .= "\n" . replace_empty_lines(strip_tags($row->post_content));
+    		        $xml .= "<content>". strip_tags($row->post_content, '<b><i><strong><em>') . "\t\t</content>\n";
     		    }
     		
                 if (($_POST['photo']) && ($feature_image)) {
@@ -108,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		    $xml .= "</". strtolower(strip_to_alpha_only($row->post_title)) .">\n";
     		    $extension = ".txt";
     		    if ($_POST['output'] != 'html') {
-                    $story = strip_tags($story, '<b><i><strong><em>');
+                    $story = strip_tags($story);
                 } else {
                     $html_head = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\n";
                     $html_head .= "\t\"http://www.w3.org/TR/html4/strict.dtd\">\n";
