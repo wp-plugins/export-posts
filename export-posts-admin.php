@@ -50,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $export_posts_tag_id = 0;
 
     		foreach ($rows as $row) {
+    		    $xml = "";
                 if ($export_posts_tag) {
     		        # update the status to printed
                     $tag = get_or_create_tag($export_posts_tag);
@@ -86,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		        $xml .= "<author>". $row->display_name . "</author>\n";
     		        if ($user_title) {
     		            $story .= $user_title . "\n";
-    		            $xml .= "<author-title>" . $user_title . "</author-title\n";
+    		            $xml .= "<author-title>" . $user_title . "</author-title>\n";
     		        }
     		    }
     		    if ($_POST['date']) {
@@ -129,6 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     		    $zip_name = "stories/" . $row->post_title . $extension;
     		    if ($_POST['output'] == 'xml') {
+    		        $xml = preg_replace("/\r\n\r\n+/s","\r\n",$xml);        
     		        $zip->addFromString($zip_name, $xml);
     		    } else {
     		        $zip->addFromString($zip_name, $story);
