@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 }
                 
                 $story = '';
-                $xml .= "<". strtolower(strip_to_alpha_only($row->post_title)) .">\n";
+                $xml .= "<". strtolower(strip_to_alpha_only($row->post_title)) .">";
                 if ($_POST['title']) {
     		        $story = $row->post_title . "\n";
     		        $xml .= "<title>". $row->post_title . "</title>\n";
