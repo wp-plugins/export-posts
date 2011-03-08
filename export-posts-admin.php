@@ -299,6 +299,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
 		    <input type="submit" name="submit" value="Generate Zip File" id="zip"/>
 		</p>
 		</form>
+		
 	    <?php
 	    else:
 	    ?>
@@ -312,7 +313,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
 <script type="text/javascript">
     jQuery(document).ready(function($) {
         
-        jQuery('#export_posts').submit(function() {
+        jQuery('#export_posts').submit(function() {    
             var ids = '';
             jQuery("#selected option").each(function(index, elem) {
                 ids += $(elem).val() + ',';
@@ -323,10 +324,11 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
             }
             ids = ids.slice(0, -1);
             jQuery('#selected_values').val(ids);
-            jQuery.post(window.location, jQuery("#export_posts").serialize(), function(data){
+            jQuery.post("<?php echo $_SERVER['PHP_SELF'] ?>?page=Export-Posts", jQuery("#export_posts").serialize(), function(data){
                 window.location.replace(jQuery(data).find("#zip_url").attr("href"));
             });
             return false;
+
         });
         
         jQuery("#remove_all").click(function() {
