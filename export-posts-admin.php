@@ -299,8 +299,8 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
 		    <input type="submit" name="submit" value="Generate Zip File" id="zip"/>
 		</p>
 		</form>
-		
 	    <?php
+	    print '<em style="color: #ddd;">posts: ' . count($dumprows) . '</em>';
 	    else:
 	    ?>
 	    <p style="text-align: center; width: 800px;">
@@ -406,7 +406,7 @@ function clear_old_zips() {
 
 function get_status_list() {
     global $wpdb;
-    $sql = "SELECT DISTINCT p.post_status FROM ".$wpdb->posts." p WHERE p.post_type='post'";
+    $sql = "SELECT DISTINCT p.post_status FROM ".$wpdb->posts." p WHERE p.post_type='post' AND p.post_status <> 'trash'";
     $rows = $wpdb->get_results($sql);
     return $rows;
 }
