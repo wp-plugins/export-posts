@@ -44,26 +44,32 @@ function export_posts_settings_page() {
     global $wpdb;
 ?>
 <div>
-<h2>Export Post Options</h2>
+<h3 style="padding-top: 10px;">Export Post Options</h3>
 
 <form method="post" action="options.php">
 <?php wp_nonce_field('update-options'); ?>
 
-<table width="510">
+<table width="710" style="padding-top: 15px;">
 <tr valign="top">
 <th width="120" scope="row">Exported Tag</th>
 <td width="406">
 <input type="text" name="export_posts_tag" value="<?php echo get_option('export_posts_tag'); ?>"/>
 </td>
 </tr>
+<tr>
+<th width="120" scope="row">Num. Posts</th>
+<td width="406">
+<input type="text" name="export_posts_no_posts" value="<?php echo get_option('export_posts_no_posts'); ?>"/>
+</td>
+</tr>
+<tr>
+<td></td>
+<td><br/><input type="submit" value="<?php _e('Save Changes') ?>" /></td>
+</tr>
 </table>
 
 <input type="hidden" name="action" value="update" />
-<input type="hidden" name="page_options" value="export_posts_tag" />
-
-<p>
-<input type="submit" value="<?php _e('Save Changes') ?>" />
-</p>
+<input type="hidden" name="page_options" value="export_posts_tag,export_posts_no_posts" />
 
 </form>
 </div>

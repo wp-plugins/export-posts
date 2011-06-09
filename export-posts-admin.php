@@ -300,7 +300,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
 		</p>
 		</form>
 	    <?php
-	    print '<em style="color: #ddd;">posts: ' . count($dumprows) . '</em>';
+	    #print '<em style="color: #ddd;">posts: ' . count($dumprows) . '</em>';
 	    else:
 	    ?>
 	    <p style="text-align: center; width: 800px;">
@@ -475,6 +475,9 @@ function get_post_list($category, $status, $keyword, $tag, $categories) {
     $sql .= "p.post_type='post' and p.post_status <> 'auto-draft' ";
     
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
+	$limit = get_option('export_posts_no_posts');
+	if ($limit == "") { $limit = 150; }
+	$sql .= " LIMIT " . $limit;
     #print  '<p>' . $sql . '</p>';
     $rows = $wpdb->get_results($sql);
 
