@@ -4,7 +4,7 @@ Donate link: http://joeboydston.com/export-posts
 Tags: export, text, xml, quark, indesign
 Requires at least: 2.9.1
 Tested up to: 3.0.1
-Stable tag: 1.0.2
+Stable Tag: 1.0.2
 
 Plugin for WordPress that exports text files for print publication.
 
