@@ -10,7 +10,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     $in =  $_POST['selected_values'];
 
-	$sql = "SELECT p.ID, u.ID as user_id, u.display_name, p.post_title, p.post_content, p.post_date, p.guid ";
+	$sql = "SELECT p.ID, u.ID as user_id, u.display_name, p.post_title, p.post_content, p.post_date, p.guid, ";
+    $sql .= "SUM(LENGTH(p.post_content) - LENGTH(REPLACE(p.post_content, ' ', ''))+1) as words ";
 	$sql .= "FROM " . $wpdb->prefix . "posts as p, ". $wpdb->prefix ."users as u ";
 	$sql .= "WHERE p.ID in (". rtrim($in, ",") . ") AND p.post_type = 'post' AND u.ID = p.post_author ";
 	$sql .= "GROUP BY p.ID ";
@@ -106,6 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $xml .= $image_xml;   
                 }
                 
+                $story .= "\nWords: " . $row->words . ", Inches: " . export_posts_inches('inches', $row->ID);
+                
                     
     		    $xml .= "</". strtolower(strip_to_alpha_only($row->post_title)) .">\n";
     		    $extension = ".txt";
@@ -188,23 +191,6 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     	        endforeach;
     	    ?>
     	 	    </select>
-    	 	Tag: <select name="tag">
-    	 	<option value="all">All Tags</option>
-    	 	<?php
-                $sql = "SELECT t.term_id, t.name from " . $wpdb->terms . " t, " . $wpdb->term_taxonomy;
-                $sql .= " l where t.term_id=l.term_id and l.taxonomy='post_tag' order by t.name";
-            	$tags = $wpdb->get_results($sql);
-            	$export_tag = get_option('export_posts_tag');
-    	 	    foreach ($tags as $tag):
-    	 	    if ($tag->name == $export_tag) { continue; }
-    	 	?>
-    	 	<option value="<?php echo $tag->term_id; ?>" <?php if ($_GET['tag'] == $tag->term_id) { echo " selected"; }?>>
-    	 	<?php echo $tag->name; ?>
-    	 	</option>
-    	 	<?php
-    	 	    endforeach;
-    	 	?>
-    	 	</select>
     	 	Status: <select name="status">
     	 	<option value="all">All Statuses</option>
     	 	<?php
@@ -432,8 +418,14 @@ function get_post_list($category, $status, $keyword, $tag, $categories) {
     
     $sql =  "SELECT p.ID, u.user_nicename, p.post_title, ";
     $sql .= "SUM(LENGTH(p.post_content) - LENGTH(REPLACE(p.post_content, ' ', ''))+1) as words ";
-    $sql .= "FROM " . $wpdb->posts . " p, " . $wpdb->users . " u ";
-    $sql .= "WHERE p.post_author = u.ID and ";
+    $sql .= "\nFROM " . $wpdb->terms . " t";
+    
+    $sql .= "\nINNER JOIN " . $wpdb->term_taxonomy . " tt ON t.term_id = tt.term_id";
+    $sql .= "\nINNER JOIN " . $wpdb->term_relationships . " wpr ON wpr.term_taxonomy_id = tt.term_taxonomy_id";
+    $sql .= "\nINNER JOIN " . $wpdb->posts . " p ON p.ID = wpr.object_id";
+    $sql .= "\nINNER JOIN " . $wpdb->users . " u ON p.post_author = u.ID";
+    $sql .= "\nWHERE 1=1 AND ";
+    
     if (($category) && ($category != 'all') || $categories) {
         if ($categories) {
             $cat_ids = $cat_row->term_id . ",";
@@ -475,11 +467,26 @@ function get_post_list($category, $status, $keyword, $tag, $categories) {
     
     $sql .= "p.post_type='post' and p.post_status <> 'auto-draft' ";
     
-    $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
 	$limit = get_option('export_posts_no_posts');
 	if ($limit == "") { $limit = 150; }
+    $print_tag_options = get_option('print_tag_options');
+    $print_tags = array();
+    for ($i=1; $i<=$print_tag_options['number_of_sections']; $i++) {
+        for ($j=1; $j<=$print_tag_options['page_count_' . $i]; $j++) {
+            $tag = $print_tag_options['section_name_' . $i] . $j;
+            array_push($print_tags, "'" . $tag . "'");
+        }
+    }
+    #print "<pre>" . implode(",", $print_tags); print "</pre>";
+    
+    if (count($print_tags)) {
+        $sql .= "AND t.name IN (". implode(",", $print_tags) . ") ";
+    }
+
+    $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
 	$sql .= " LIMIT " . $limit;
-    #print  '<p>' . $sql . '</p>';
+
+   # print  '<p><pre>' . $sql . '</pre></p>';
     $rows = $wpdb->get_results($sql);
 
     return $rows;
@@ -572,6 +579,34 @@ function strip_to_alpha_only($string)
 {
      $pattern = '/[^a-zA-Z]/';
      return preg_replace($pattern, '', $string);
+}
+
+
+function export_posts_inches($column_name, $post_id) {
+    $rv = "";
+	if ($column_name === 'inches') {
+        $post = get_post($post_id);
+		
+		// Remove HTML tags
+		$post_plaintext = strip_tags( $post->post_content );
+		
+		// Get column inches from options table
+		$options = get_option( COLUMN_INCHES_OPTION );
+		$column_inches = $options['words_inch'];
+		$words = str_word_count( $post_plaintext );
+		$num_counts = count($column_inches);
+		
+		// Display column inches
+		for ($i = 0; $i < $num_counts; $i++) {
+			$column_inch = $column_inches[$i];
+			$name = $column_inch['name'];
+			$inches = ceil( $words / $column_inch['count'] );
+			$rv .= "<span title='$name: $inches column inch" . ($inches != 1 ? "es" : "") . "' style='border-bottom: 1px dotted #666; cursor: help;'>$inches</span>";
+			if ($num_counts  > 1 && $i < $num_counts - 1)
+				$rv .= ' / ';
+		}		
+	}
+	return $rv;
 }
 
 ?>

@@ -4,12 +4,10 @@ Plugin Name: Export Posts
 Plugin URI: http://joeboydston.com/export-posts/
 Description: Plugin is for dumping articles to a zip file
 Author: Joe Boydston
-Version: 1.1.1
+Version: 1.2
 Author URI: http://joeboydston.com
 */
-
 define( 'EXPORT_POSTS_URL' , plugins_url(plugin_basename(dirname(__FILE__)).'/') );
-
 
 //MENU
 function dump_menu() {
