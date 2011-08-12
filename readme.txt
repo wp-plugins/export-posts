@@ -4,13 +4,30 @@ Donate link: http://joeboydston.com/export-posts
 Tags: export, text, xml, quark, indesign
 Requires at least: 2.9.1
 Tested up to: 3.0.1
-Stable Tag: 1.1.1
+Stable Tag: 1.2
 
 Plugin for WordPress that exports text files for print publication.
 
 == Description ==
 
 Used to select posts from a Wordpress site, and export them as text files.
+
+== License ==
+Copyright 2010 - 2011 Joe Boydston, Don Kukral
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 == Installation ==
 
@@ -26,17 +43,22 @@ None.
 
 == Changelog ==
 
+= 1.2 =
+Added license and copyright information
+Added code to integrate with print-tags plugin
+Added word count and column inches to bottom of post (requires column-inches plugin) 
+
 = 1.1.1 = 
-* Fixed ampersands in XML export
-* Added number of posts to display in settings page and export page
+Fixed ampersands in XML export
+Added number of posts to display in settings page and export page
 
 = 1.0.1 =
-* Code cleanup
-* New post selection interface
-* Export formats
+Code cleanup
+New post selection interface
+Export formats
 
 = 1.0 = 
-* Initial version
+Initial version
 
 == Frequently Asked Questions ==
 
