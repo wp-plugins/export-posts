@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $xml .= $image_xml;   
                 }
                 
-                $story .= "\nWords: " . $row->words . ", Inches: " . export_posts_inches('inches', $row->ID);
+               # $story .= "\nWords: " . $row->words . ", Inches: " . export_posts_inches('inches', $row->ID);
                 
                     
     		    $xml .= "</". strtolower(strip_to_alpha_only($row->post_title)) .">\n";
@@ -178,32 +178,12 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     	    <p >
             <form id="filter" name="filter" action="" method="GET" style="text-align: center; width: 650px;">
             <input type="hidden" name="page" value="Export-Posts"/>
-    	    <?php $categories = get_categories(); ?>
-    	    Category: <select name="category">
-    	    <option value="all">All Categories</option>
- 	       <?php
-    	        foreach ($categories as $category) :
-    	    ?>
-    	    <option value="<?php echo $category->slug; ?>" <?php if ($_GET['category'] == $category->slug) { echo " selected"; }?>>
-    	    <?php echo $category->cat_name; ?>
-    	    </option>
-    	    <?php 
-    	        endforeach;
-    	    ?>
-    	 	    </select>
-    	 	Status: <select name="status">
-    	 	<option value="all">All Statuses</option>
-    	 	<?php
-    	 	    if (!$_GET['status']) { $_GET['status'] = 'publish'; }
-    	 	    $status = get_status_list();
-    	 	    foreach ($status as $stat):
-    	 	    if ($stat->post_status == 'auto-draft') { continue; }
-    	    ?>
-                <option<?php if ($_GET['status'] == $stat->post_status) { echo " selected"; }?>><?php echo $stat->post_status;?></option>
-    	    <?php
-    	        endforeach;
-    	    ?>
-    	    </select>
+            <?php
+                if (array_key_exists('print_tag', $_GET)) { $print_tag = $_GET['print_tag']; }
+                else { $print_tag = "0"; }
+                $ptags = get_print_tags_drop_down($print_tag);
+                if ($ptags) { echo "E-Section: "; echo $ptags; }
+            ?>
     	    Keyword: <input type="text" name="keyword" value="<?php echo $_GET['keyword'] ?>" size="8"/>
     	    <input type="submit" name="submit" value="Filter"/>
             </form>
@@ -243,10 +223,12 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
             <select id="export_post_entries" multiple="multiple" size="12" style="height: auto; width: 650px;">
     	    <?php
     			foreach ($dumprows as $dump) :
+    			    $options = get_option( COLUMN_INCHES_OPTION );
+        		    $word_inches = $options['words_inch'];
     		?>
                 <option value="<?php echo $dump->ID; ?>" class="export_post_entry">
                     <?php echo $dump->post_title; ?>
-                    (<?php echo $dump->user_nicename; ?> - <?php echo $dump->words; ?> words)
+                    (<?php echo $dump->user_nicename; ?> - <?php echo export_posts_words_to_inches($dump->words, $word_inches); ?> inches)
                 </option>
     		<?php
     			endforeach;
@@ -398,7 +380,7 @@ function get_status_list() {
     return $rows;
 }
 
-function get_post_list($category, $status, $keyword, $tag, $categories) {
+function get_post_list($category, $status="publish", $keyword, $tag, $categories) {
     global $wpdb;
     $cat_ids = "";
     if (($category) && ($category != 'all')) {
@@ -482,6 +464,10 @@ function get_post_list($category, $status, $keyword, $tag, $categories) {
     if (count($print_tags)) {
         $sql .= "AND t.name IN (". implode(",", $print_tags) . ") ";
     }
+    
+     if (array_key_exists('print_tag', $_GET)) {
+         $sql .= "AND t.name='". $_GET['print_tag'] . "' ";
+     }
 
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
 	$sql .= " LIMIT " . $limit;
@@ -609,5 +595,36 @@ function export_posts_inches($column_name, $post_id) {
 	return $rv;
 }
 
+function export_posts_words_to_inches($words, $words_inches) {
+    $rv = "";
+    $num_counts = count($words_inches);
+	
+	// Display column inches
+	for ($i = 0; $i < $num_counts; $i++) {
+		$column_inch = $words_inches[$i];
+		$name = $column_inch['name'];
+		$inches = ceil( $words / $column_inch['count'] );
+		$rv .= "<span title='$name: $inches column inch" . ($inches != 1 ? "es" : "") . "' style='border-bottom: 1px dotted #666; cursor: help;'>$inches</span>";
+		if ($num_counts  > 1 && $i < $num_counts - 1)
+			$rv .= ' / ';
+	}
+	return $rv;
+}
+
+function get_print_tags_drop_down($print_tag) {
+    $print_tag_options = get_option('print_tag_options');
+    $print_tags = '<select name="print_tag">';
+    $print_tags .= '<option value="0">--- select e_section ---</option>';
+    for ($i=1; $i<=$print_tag_options['number_of_sections']; $i++) {
+        for ($j=1; $j<=$print_tag_options['page_count_' . $i]; $j++) {
+            $tag = $print_tag_options['section_name_' . $i] . $j;
+            $selected = "";
+            if ($tag == $print_tag) { $selected = ' selected="selected"'; }
+            $print_tags .= '<option'. $selected .'>' . $tag . '</option>';
+         }
+    }
+    $print_tags .= '</select>';   
+    return $print_tags;    
+}
 ?>
 
