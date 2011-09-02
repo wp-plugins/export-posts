@@ -43,6 +43,9 @@ None.
 
 == Changelog ==
 
+= 1.3 =
+Added export-posts-date meta field to exported posts
+
 = 1.2.1 =
 Changed word count to inch count on export-posts page
 Integrated with print-tags plugin
