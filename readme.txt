@@ -43,6 +43,9 @@ None.
 
 == Changelog ==
 
+= 1.3.1 =
+Added total inches to selected stories
+
 = 1.3 =
 Added export-posts-date meta field to exported posts
 

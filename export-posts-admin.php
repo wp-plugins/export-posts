@@ -227,14 +227,16 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     			foreach ($dumprows as $dump) :
     			    $options = get_option( COLUMN_INCHES_OPTION );
         		    $word_inches = $options['words_inch'];
+        		    $value = export_posts_words_to_inches_value($dump->ID, $dump->words, $word_inches);
     		?>
-                <option value="<?php echo $dump->ID; ?>" class="export_post_entry">
+                <option value='<?php echo $dump->ID; ?>' id='<?php echo $value; ?>' class="export_post_entry">
                     <?php echo $dump->post_title; ?>
                     (<?php echo $dump->user_nicename; ?> - <?php echo export_posts_words_to_inches($dump->words, $word_inches); ?> inches)
                 </option>
     		<?php
     			endforeach;
-    		echo "</select>";
+    		echo "</select>"; 
+    		
 
     	?>		
         <p style="text-align: center; width: 650px;">
@@ -244,6 +246,12 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         <input type="button" id="remove_all" value="Remove All Posts"/> 
         </p>
     	<p>
+    	<span class="inches">Total Inches:
+    	<?php for ($i = 0; $i < count($word_inches); $i++) { 
+            echo "<span id='inches_" . $i . "'>0</span>";
+            if ($i != (count($word_inches) -1)) { echo " / "; }
+    	} ?>
+    	</span>
     	Selected Posts:<br/>
         <select id="selected" multiple="multiple" size="12" style="height: auto; width: 650px;">
     	</select>
@@ -305,9 +313,14 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         jQuery("#remove_all").click(function() {
             jQuery("#selected option").each(function(index, elem) {
                 var selectElem = $(elem);
+                var obj = jQuery.parseJSON(selectElem.attr('id'));
+                <?php 	for ($i = 0; $i < count($word_inches); $i++) { ?>
+                    var curInches = parseInt(jQuery("#inches_<?php echo $i; ?>").html());
+                    jQuery("#inches_<?php echo $i;?>").html((curInches-parseInt(obj.inches_<?php echo $i; ?>)));
+                <?php } ?>
                 if (selectElem.val()) {
                     jQuery('#selected option[value=' + selectElem.val() + ']').remove();
-                    jQuery('#export_post_entries').append('<option value="'+selectElem.val()+'">' + 
+                    jQuery('#export_post_entries').append('<option value=\''+selectElem.val()+'\' id=\''+selectElem.attr('id')+'\'>' + 
                     selectElem.text() + '</option>');
                 }
             });
@@ -316,9 +329,14 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         jQuery("#remove_selected").click(function() {
             jQuery("#selected :selected").each(function(index, elem) {
                 var selectElem = $(elem);
+                var obj = jQuery.parseJSON(selectElem.attr('id'));
+                <?php 	for ($i = 0; $i < count($word_inches); $i++) { ?>
+                    var curInches = parseInt(jQuery("#inches_<?php echo $i; ?>").html());
+                    jQuery("#inches_<?php echo $i;?>").html((curInches-parseInt(obj.inches_<?php echo $i; ?>)));
+                <?php } ?>
                 if (selectElem.val()) {
                     jQuery('#selected option[value=' + selectElem.val() + ']').remove();
-                    jQuery('#export_post_entries').append('<option value="'+selectElem.val()+'">' + 
+                    jQuery('#export_post_entries').append('<option value="'+selectElem.val()+'" id=\''+selectElem.attr('id')+'\'>' + 
                     selectElem.text() + '</option>');
                 }
             });
@@ -327,9 +345,14 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         jQuery("#add_selected").click(function() {
             jQuery("#export_post_entries :selected").each(function(index, elem) {
                 var selectElem = $(elem);
+                var obj = jQuery.parseJSON(selectElem.attr('id'));
+                <?php 	for ($i = 0; $i < count($word_inches); $i++) { ?>
+                    var curInches = parseInt(jQuery("#inches_<?php echo $i; ?>").html());
+                    jQuery("#inches_<?php echo $i;?>").html((curInches+parseInt(obj.inches_<?php echo $i; ?>)));
+                <?php } ?>
                 if (selectElem.val()) {
                     jQuery('#export_post_entries option[value=' + selectElem.val() + ']').remove();
-                    jQuery('#selected').append('<option value="'+selectElem.val()+'">' + 
+                    jQuery('#selected').append('<option value="'+selectElem.val()+'" id=\''+selectElem.attr('id')+'\'>' + 
                     selectElem.text() + '</option>');
                 }
             });
@@ -338,9 +361,14 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         jQuery("#add_all").click(function() {
             jQuery("#export_post_entries option").each(function(index, elem) {
                 var selectElem = $(elem);
+                var obj = jQuery.parseJSON(selectElem.attr('id'));
+                <?php 	for ($i = 0; $i < count($word_inches); $i++) { ?>
+                    var curInches = parseInt(jQuery("#inches_<?php echo $i; ?>").html());
+                    jQuery("#inches_<?php echo $i;?>").html((curInches+parseInt(obj.inches_<?php echo $i; ?>)));
+                <?php } ?>
                 if (selectElem.val()) {
                     jQuery('#export_post_entries option[value=' + selectElem.val() + ']').remove();
-                    jQuery('#selected').append('<option value="'+selectElem.val()+'">' + 
+                    jQuery('#selected').append('<option value="'+selectElem.val()+'" id=\''+selectElem.attr('id')+'\'>' + 
                     selectElem.text() + '</option>');
                 }
             });
@@ -611,6 +639,20 @@ function export_posts_words_to_inches($words, $words_inches) {
 			$rv .= ' / ';
 	}
 	return $rv;
+}
+
+function export_posts_words_to_inches_value($id, $words, $words_inches) {
+    $rv = array('id'=>$id);
+    $num_counts = count($words_inches);
+	
+	// Display column inches
+	for ($i = 0; $i < $num_counts; $i++) {
+		$column_inch = $words_inches[$i];
+		$name = $column_inch['name'];
+		$inches = ceil( $words / $column_inch['count'] );
+		$rv['inches_' . $i] = $inches;
+	}
+	return json_encode($rv);
 }
 
 function get_print_tags_drop_down($print_tag) {
