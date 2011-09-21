@@ -4,7 +4,7 @@ Donate link: http://joeboydston.com/export-posts
 Tags: export, text, xml, quark, indesign
 Requires at least: 2.9.1
 Tested up to: 3.0.1
-Stable Tag: 1.2.1
+Stable Tag: 1.3.1
 
 Plugin for WordPress that exports text files for print publication.
 
@@ -42,6 +42,12 @@ Requires PHP zip and iconv modules.
 None.
 
 == Changelog ==
+
+= 1.3.1 =
+Added total inches to selected stories
+
+= 1.3 =
+Added export-posts-date meta field to exported posts
 
 = 1.2.1 =
 Changed word count to inch count on export-posts page
