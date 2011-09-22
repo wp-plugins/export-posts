@@ -109,6 +109,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $xml .= $image_xml;   
                 }
                 
+                if ($_POST['comment_count']) {
+                    $comment_count = wp_count_comments($row->ID);
+                    $xml .= "<comments>" . $comment_count->total_comments . "</comments>\n";
+                }
+                
+                if ($_POST['short_link']) {
+                    $xml .= "<shortlink>" . wp_get_shortlink($row->ID) . "</shortlink>\n";
+                }
+                
+                if ($_POST['e_section_quote']) {
+                    $quote = get_post_meta($row->ID, 'e-sec-quote', true);
+                    $mxl .= "<e-sec-quote>" . $quote . "</e-sec-quote>\n";
+                }
+                
                # $story .= "\nWords: " . $row->words . ", Inches: " . export_posts_inches('inches', $row->ID);
                 
                     
@@ -272,7 +286,12 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
             <input type="checkbox" name="content" value="1" checked="checked"/> Content
             <input type="checkbox" name="photo" value="1"/> Feature Photo
         </p>
-        
+        <p class="xml_only" style="display: none;">
+            <input type="checkbox" name="comment_count" value="1"/> Comment Count
+            <input type="checkbox" name="e_section_quote" value="1"/> E-Section Quote
+            <input type="checkbox" name="short_link" value="1"/> Short Link
+            
+        </p>
         <p style="text-align: center; width: 750px;">
             <input type="hidden" id="selected_values" name="selected_values" value="0"/>
 		    <input type="submit" name="submit" value="Generate Zip File" id="zip"/>
@@ -392,6 +411,18 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
             return false; 
         });
         
+        jQuery("input[name='output']").change(function() {
+            if (jQuery("input[name='output']:checked").val() == 'xml') {
+                jQuery('.xml_only').show();
+            } else {
+                jQuery('.xml_only').hide();
+                jQuery("input[name='comment_count']").removeAttr("checked");
+                jQuery("input[name='e_section_quote']").removeAttr("checked");
+                jQuery("input[name='short_link']").removeAttr("checked");
+                
+            }
+        });
+
     });
 </script>
 <?php 
