@@ -120,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 
                 if ($_POST['e_section_quote']) {
                     $quote = get_post_meta($row->ID, 'e-sec-quote', true);
-                    $mxl .= "<e-sec-quote>" . $quote . "</e-sec-quote>\n";
+                    $xml .= "<e-sec-quote>" . $quote . "</e-sec-quote>\n";
                 }
                 
                # $story .= "\nWords: " . $row->words . ", Inches: " . export_posts_inches('inches', $row->ID);
