@@ -61,7 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     
                     $wpdb->query($sql);
                     # add export-posts-date meta
-                    update_post_meta($row->ID, 'export-posts-date', date('m/d/Y H:i:s'));
+                    update_post_meta($row->ID, 'export-posts-date', date('Y-m-d'));
+                    update_post_meta($row->ID, 'e_section_status', 'printed');
                 }
 
                 $feature_image = get_featured_image($row->ID);   
