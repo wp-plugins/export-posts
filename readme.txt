@@ -4,7 +4,7 @@ Donate link: http://joeboydston.com/export-posts
 Tags: export, text, xml, quark, indesign
 Requires at least: 2.9.1
 Tested up to: 3.0.1
-Stable Tag: 1.2.1
+Stable Tag: 1.5
 
 Plugin for WordPress that exports text files for print publication.
 
@@ -13,7 +13,7 @@ Plugin for WordPress that exports text files for print publication.
 Used to select posts from a Wordpress site, and export them as text files.
 
 == License ==
-Copyright 2010 - 2011 Joe Boydston, Don Kukral
+Copyright 2010 - 2012 Joe Boydston, Don Kukral
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -42,6 +42,21 @@ Requires PHP zip and iconv modules.
 None.
 
 == Changelog ==
+
+= 1.5 = 
+Fixed caching problem with tags - call to clean_post_cache()
+
+= 1.3.3 =
+Typo fix
+
+= 1.3.2 =
+Added new XML export options (comment count, e-section quote, short link)
+
+= 1.3.1 =
+Added total inches to selected stories
+
+= 1.3 =
+Added export-posts-date meta field to exported posts
 
 = 1.2.1 =
 Changed word count to inch count on export-posts page
