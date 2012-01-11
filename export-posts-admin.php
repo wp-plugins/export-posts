@@ -54,12 +54,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		    $xml = "";
                 if ($export_posts_tag) {
     		        # update the status to printed
-                    $tag = get_or_create_tag($export_posts_tag);
-                    $wpdb->insert($wpdb->term_relationships, 
-                        array('object_id' => $row->ID, 'term_taxonomy_id' => $tag['term_taxonomy_id'], 'term_order' => 0),
-                        array('%d', '%s', '%d'));
+                    #$tag = get_or_create_tag($export_posts_tag);
+                    #$wpdb->insert($wpdb->term_relationships, 
+                    #    array('object_id' => $row->ID, 'term_taxonomy_id' => $tag['term_taxonomy_id'], 'term_order' => 0),
+                    #    array('%d', '%s', '%d'));
                     
-                    $wpdb->query($sql);
+                    #$wpdb->query($sql);
+
+                    $tag = get_term_by('name', $export_posts_tag, 'post_tag');
+                    wp_set_object_terms($row->ID, $tag->name, 'post_tag', True);
+                    clean_post_cache($row->ID);
                     # add export-posts-date meta
                     update_post_meta($row->ID, 'export-posts-date', date('Y-m-d'));
                     update_post_meta($row->ID, 'e_section_status', 'printed');
@@ -531,10 +535,12 @@ function get_post_list($category, $status="publish", $keyword, $tag, $categories
          $sql .= "AND t.name='". $_GET['print_tag'] . "' ";
      }
 
+     $sql .= "AND p.ID in (SELECT post_id FROM " . $wpdb->postmeta . " WHERE meta_key = 'e_section_date') ";
+
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
 	$sql .= " LIMIT " . $limit;
 
-   # print  '<p><pre>' . $sql . '</pre></p>';
+    #print  '<p><pre>' . $sql . '</pre></p>';
     $rows = $wpdb->get_results($sql);
 
     return $rows;
