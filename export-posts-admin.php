@@ -209,7 +209,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     	    <input type="submit" name="submit" value="Filter"/>
             </form>
             </p>
-            <div id="cat-filter">
+            <div id="cat-filter" style="float: right; margin-right: 50px; width: 300px;">
             <form id="cat-filter-form" name="cat-filter" action="" method="GET">
             
             <ul>
