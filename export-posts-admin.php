@@ -54,12 +54,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     		    $xml = "";
                 if ($export_posts_tag) {
     		        # update the status to printed
-                    $tag = get_or_create_tag($export_posts_tag);
-                    $wpdb->insert($wpdb->term_relationships, 
-                        array('object_id' => $row->ID, 'term_taxonomy_id' => $tag['term_taxonomy_id'], 'term_order' => 0),
-                        array('%d', '%s', '%d'));
+                    #$tag = get_or_create_tag($export_posts_tag);
+                    #$wpdb->insert($wpdb->term_relationships, 
+                    #    array('object_id' => $row->ID, 'term_taxonomy_id' => $tag['term_taxonomy_id'], 'term_order' => 0),
+                    #    array('%d', '%s', '%d'));
                     
-                    $wpdb->query($sql);
+                    #$wpdb->query($sql);
+
+                    $tag = get_term_by('name', $export_posts_tag, 'post_tag');
+                    wp_set_object_terms($row->ID, $tag->name, 'post_tag', True);
+                    clean_post_cache($row->ID);
+                    # add export-posts-date meta
+                    update_post_meta($row->ID, 'export-posts-date', date('Y-m-d'));
+                    update_post_meta($row->ID, 'e_section_status', 'printed');
                 }
 
                 $feature_image = get_featured_image($row->ID);   
@@ -105,6 +112,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 if (($_POST['photo']) && ($feature_image)) {
                     $story .= $image_text;         
                     $xml .= $image_xml;   
+                }
+                
+                if ($_POST['comment_count']) {
+                    $comment_count = wp_count_comments($row->ID);
+                    $xml .= "<comments>" . $comment_count->total_comments . "</comments>\n";
+                }
+                
+                if ($_POST['short_link']) {
+                    $xml .= "<shortlink>" . wp_get_shortlink($row->ID) . "</shortlink>\n";
+                }
+                
+                if ($_POST['e_section_quote']) {
+                    $quote = get_post_meta($row->ID, 'e-sec-quote', true);
+                    $xml .= "<e-sec-quote>" . $quote . "</e-sec-quote>\n";
                 }
                 
                # $story .= "\nWords: " . $row->words . ", Inches: " . export_posts_inches('inches', $row->ID);
@@ -188,7 +209,7 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     	    <input type="submit" name="submit" value="Filter"/>
             </form>
             </p>
-            <div id="cat-filter">
+            <div id="cat-filter" style="float: right; margin-right: 50px; width: 300px;">
             <form id="cat-filter-form" name="cat-filter" action="" method="GET">
             
             <ul>
@@ -225,14 +246,16 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
     			foreach ($dumprows as $dump) :
     			    $options = get_option( COLUMN_INCHES_OPTION );
         		    $word_inches = $options['words_inch'];
+        		    $value = export_posts_words_to_inches_value($dump->ID, $dump->words, $word_inches);
     		?>
-                <option value="<?php echo $dump->ID; ?>" class="export_post_entry">
+                <option value='<?php echo $dump->ID; ?>' id='<?php echo $value; ?>' class="export_post_entry">
                     <?php echo $dump->post_title; ?>
                     (<?php echo $dump->user_nicename; ?> - <?php echo export_posts_words_to_inches($dump->words, $word_inches); ?> inches)
                 </option>
     		<?php
     			endforeach;
-    		echo "</select>";
+    		echo "</select>"; 
+    		
 
     	?>		
         <p style="text-align: center; width: 650px;">
@@ -242,6 +265,12 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         <input type="button" id="remove_all" value="Remove All Posts"/> 
         </p>
     	<p>
+    	<span class="inches">Total Inches:
+    	<?php for ($i = 0; $i < count($word_inches); $i++) { 
+            echo "<span id='inches_" . $i . "'>0</span>";
+            if ($i != (count($word_inches) -1)) { echo " / "; }
+    	} ?>
+    	</span>
     	Selected Posts:<br/>
         <select id="selected" multiple="multiple" size="12" style="height: auto; width: 650px;">
     	</select>
@@ -262,7 +291,12 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
             <input type="checkbox" name="content" value="1" checked="checked"/> Content
             <input type="checkbox" name="photo" value="1"/> Feature Photo
         </p>
-        
+        <p class="xml_only" style="display: none;">
+            <input type="checkbox" name="comment_count" value="1"/> Comment Count
+            <input type="checkbox" name="e_section_quote" value="1"/> E-Section Quote
+            <input type="checkbox" name="short_link" value="1"/> Short Link
+            
+        </p>
         <p style="text-align: center; width: 750px;">
             <input type="hidden" id="selected_values" name="selected_values" value="0"/>
 		    <input type="submit" name="submit" value="Generate Zip File" id="zip"/>
@@ -303,9 +337,14 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         jQuery("#remove_all").click(function() {
             jQuery("#selected option").each(function(index, elem) {
                 var selectElem = $(elem);
+                var obj = jQuery.parseJSON(selectElem.attr('id'));
+                <?php 	for ($i = 0; $i < count($word_inches); $i++) { ?>
+                    var curInches = parseInt(jQuery("#inches_<?php echo $i; ?>").html());
+                    jQuery("#inches_<?php echo $i;?>").html((curInches-parseInt(obj.inches_<?php echo $i; ?>)));
+                <?php } ?>
                 if (selectElem.val()) {
                     jQuery('#selected option[value=' + selectElem.val() + ']').remove();
-                    jQuery('#export_post_entries').append('<option value="'+selectElem.val()+'">' + 
+                    jQuery('#export_post_entries').append('<option value=\''+selectElem.val()+'\' id=\''+selectElem.attr('id')+'\'>' + 
                     selectElem.text() + '</option>');
                 }
             });
@@ -314,9 +353,14 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         jQuery("#remove_selected").click(function() {
             jQuery("#selected :selected").each(function(index, elem) {
                 var selectElem = $(elem);
+                var obj = jQuery.parseJSON(selectElem.attr('id'));
+                <?php 	for ($i = 0; $i < count($word_inches); $i++) { ?>
+                    var curInches = parseInt(jQuery("#inches_<?php echo $i; ?>").html());
+                    jQuery("#inches_<?php echo $i;?>").html((curInches-parseInt(obj.inches_<?php echo $i; ?>)));
+                <?php } ?>
                 if (selectElem.val()) {
                     jQuery('#selected option[value=' + selectElem.val() + ']').remove();
-                    jQuery('#export_post_entries').append('<option value="'+selectElem.val()+'">' + 
+                    jQuery('#export_post_entries').append('<option value="'+selectElem.val()+'" id=\''+selectElem.attr('id')+'\'>' + 
                     selectElem.text() + '</option>');
                 }
             });
@@ -325,9 +369,14 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         jQuery("#add_selected").click(function() {
             jQuery("#export_post_entries :selected").each(function(index, elem) {
                 var selectElem = $(elem);
+                var obj = jQuery.parseJSON(selectElem.attr('id'));
+                <?php 	for ($i = 0; $i < count($word_inches); $i++) { ?>
+                    var curInches = parseInt(jQuery("#inches_<?php echo $i; ?>").html());
+                    jQuery("#inches_<?php echo $i;?>").html((curInches+parseInt(obj.inches_<?php echo $i; ?>)));
+                <?php } ?>
                 if (selectElem.val()) {
                     jQuery('#export_post_entries option[value=' + selectElem.val() + ']').remove();
-                    jQuery('#selected').append('<option value="'+selectElem.val()+'">' + 
+                    jQuery('#selected').append('<option value="'+selectElem.val()+'" id=\''+selectElem.attr('id')+'\'>' + 
                     selectElem.text() + '</option>');
                 }
             });
@@ -336,9 +385,14 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
         jQuery("#add_all").click(function() {
             jQuery("#export_post_entries option").each(function(index, elem) {
                 var selectElem = $(elem);
+                var obj = jQuery.parseJSON(selectElem.attr('id'));
+                <?php 	for ($i = 0; $i < count($word_inches); $i++) { ?>
+                    var curInches = parseInt(jQuery("#inches_<?php echo $i; ?>").html());
+                    jQuery("#inches_<?php echo $i;?>").html((curInches+parseInt(obj.inches_<?php echo $i; ?>)));
+                <?php } ?>
                 if (selectElem.val()) {
                     jQuery('#export_post_entries option[value=' + selectElem.val() + ']').remove();
-                    jQuery('#selected').append('<option value="'+selectElem.val()+'">' + 
+                    jQuery('#selected').append('<option value="'+selectElem.val()+'" id=\''+selectElem.attr('id')+'\'>' + 
                     selectElem.text() + '</option>');
                 }
             });
@@ -362,6 +416,18 @@ $dumprows = get_post_list($_GET['category'], $_GET['status'], $_GET['keyword'], 
             return false; 
         });
         
+        jQuery("input[name='output']").change(function() {
+            if (jQuery("input[name='output']:checked").val() == 'xml') {
+                jQuery('.xml_only').show();
+            } else {
+                jQuery('.xml_only').hide();
+                jQuery("input[name='comment_count']").removeAttr("checked");
+                jQuery("input[name='e_section_quote']").removeAttr("checked");
+                jQuery("input[name='short_link']").removeAttr("checked");
+                
+            }
+        });
+
     });
 </script>
 <?php 
@@ -430,9 +496,10 @@ function get_post_list($category, $status="publish", $keyword, $tag, $categories
         $sql .= "p.ID in (" . $tag_sql . ") and ";
     }
 
-    if (($status) && ($status != 'all')) {
+    #if (($status) && ($status != 'all')) {
+	$status = 'publish'; 
         $sql .= "p.post_status='" .$status."' and ";
-    }
+    #}
     if ($keyword) {
         $sql .= "p.post_title like '%" . $keyword ."%' and ";
     }
@@ -469,10 +536,12 @@ function get_post_list($category, $status="publish", $keyword, $tag, $categories
          $sql .= "AND t.name='". $_GET['print_tag'] . "' ";
      }
 
+     $sql .= "AND p.ID in (SELECT post_id FROM " . $wpdb->postmeta . " WHERE meta_key = 'e_section_date') ";
+
     $sql .= "GROUP BY p.ID ORDER BY p.post_date DESC";
 	$sql .= " LIMIT " . $limit;
 
-   # print  '<p><pre>' . $sql . '</pre></p>';
+    #print  '<p><pre>' . $sql . '</pre></p>';
     $rows = $wpdb->get_results($sql);
 
     return $rows;
@@ -609,6 +678,20 @@ function export_posts_words_to_inches($words, $words_inches) {
 			$rv .= ' / ';
 	}
 	return $rv;
+}
+
+function export_posts_words_to_inches_value($id, $words, $words_inches) {
+    $rv = array('id'=>$id);
+    $num_counts = count($words_inches);
+	
+	// Display column inches
+	for ($i = 0; $i < $num_counts; $i++) {
+		$column_inch = $words_inches[$i];
+		$name = $column_inch['name'];
+		$inches = ceil( $words / $column_inch['count'] );
+		$rv['inches_' . $i] = $inches;
+	}
+	return json_encode($rv);
 }
 
 function get_print_tags_drop_down($print_tag) {
