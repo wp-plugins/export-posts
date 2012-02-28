@@ -496,9 +496,10 @@ function get_post_list($category, $status="publish", $keyword, $tag, $categories
         $sql .= "p.ID in (" . $tag_sql . ") and ";
     }
 
-    if (($status) && ($status != 'all')) {
+    #if (($status) && ($status != 'all')) {
+	$status = 'publish'; 
         $sql .= "p.post_status='" .$status."' and ";
-    }
+    #}
     if ($keyword) {
         $sql .= "p.post_title like '%" . $keyword ."%' and ";
     }
