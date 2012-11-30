@@ -1,5 +1,5 @@
 === Export Posts ===
-Contributors: jboydston, dkukral
+Contributors: jboydston, dkukral, Droyal
 Donate link: http://joeboydston.com/export-posts
 Tags: export, text, xml, quark, indesign
 Requires at least: 2.9.1
