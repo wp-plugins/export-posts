@@ -39,7 +39,7 @@ Requires PHP zip and iconv modules.
 
 == Screenshots ==
 
-1. Some filtering functionality by href="http://wordpress.org/extend/plugins/e-section/" E-section plugin tag or keyword search.
+1. Some filtering functionality by <a href="http://wordpress.org/extend/plugins/e-section/" target="_blank">E-section</a> plugin tag or keyword search.
 2. Select which posts to export and Add Selected Posts, or, Add All, etc.
 3. Currently three output formats available. There are optional post fields to include or exclude as well.
 
