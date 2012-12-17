@@ -10,7 +10,7 @@ Plugin for WordPress that exports text files for print publication.
 
 == Description ==
 
-Used to select posts from a Wordpress site, and export them as text files.
+Used to select posts from a Wordpress site and export them as .txt, XML, or HTML files.
 
 == License ==
 Copyright 2010 - 2012 Joe Boydston, Don Kukral
@@ -39,7 +39,9 @@ Requires PHP zip and iconv modules.
 
 == Screenshots ==
 
-None.
+1. Some filtering functionality by href="http://wordpress.org/extend/plugins/e-section/" E-section plugin tag or keyword search.
+2. Select which posts to export and Add Selected Posts, or, Add All, etc.
+3. Currently three output formats available. There are optional post fields to include or exclude as well.
 
 == Changelog ==
 
