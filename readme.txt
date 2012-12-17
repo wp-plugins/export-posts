@@ -6,7 +6,7 @@ Requires at least: 2.9.1
 Tested up to: 3.0.1
 Stable Tag: 1.5.2
 
-Plugin for WordPress that exports text files for print publication.
+Plugin for WordPress that exports text, XML, or HTML files for print publication.
 
 == Description ==
 
