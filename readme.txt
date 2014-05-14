@@ -4,9 +4,13 @@ Donate link: http://joeboydston.com/export-posts
 Tags: export, text, xml, quark, indesign
 Requires at least: 2.9.1
 Tested up to: 3.0.1
-Stable Tag: 1.5.2
+Stable Tag: 1.6
 
 Plugin for WordPress that exports text files for print publication.
+
+*** PLUGIN IS NO LONGER MAINTAINED ***
+
+Now a part of E-Section Plugin (https://wordpress.org/plugins/e-section/)
 
 == Description ==
 
@@ -42,6 +46,8 @@ Requires PHP zip and iconv modules.
 None.
 
 == Changelog ==
+= 1.6 =
+Added verbiage to show plugin no longer maintained
 
 = 1.5.2 = 
 Limiting post list to only published posts
